@@ -28,18 +28,18 @@ export default function LeverDetailScreen() {
   if (!lever || !parentGoal) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <ThemedText>Hebel nicht gefunden</ThemedText>
+        <ThemedText>Lever not found</ThemedText>
       </SafeAreaView>
     );
   }
 
   const getEffortLabel = (effort: string) => {
-    const labels: Record<string, string> = { low: 'Niedrig', medium: 'Mittel', high: 'Hoch' };
+    const labels: Record<string, string> = { low: 'Low', medium: 'Moderate', high: 'High' };
     return labels[effort] || effort;
   };
 
   const getImpactLabel = (impact: string) => {
-    const labels: Record<string, string> = { low: 'Niedrig', medium: 'Mittel', high: 'Hoch' };
+    const labels: Record<string, string> = { low: 'Low', medium: 'Moderate', high: 'High' };
     return labels[impact] || impact;
   };
 
@@ -109,7 +109,7 @@ export default function LeverDetailScreen() {
 
           <View style={styles.metaRow}>
             <View style={[styles.metaCard, { backgroundColor: colors.card }]}>
-              <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Aufwand</ThemedText>
+              <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Effort</ThemedText>
               <ThemedText style={[styles.metaValue, { color: getEffortColor(lever.effort) }]}>
                 {getEffortLabel(lever.effort)}
               </ThemedText>
@@ -126,7 +126,7 @@ export default function LeverDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="checkmark.circle.fill" size={24} color={colors.success} />
-            <ThemedText style={styles.sectionTitle}>Vorteile</ThemedText>
+            <ThemedText style={styles.sectionTitle}>Benefits</ThemedText>
           </View>
           {lever.benefits.map((benefit, index) => (
             <View key={index} style={[styles.benefitItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -139,7 +139,7 @@ export default function LeverDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="list.number" size={24} color={parentGoal.color} />
-            <ThemedText style={styles.sectionTitle}>Implementierungsschritte</ThemedText>
+            <ThemedText style={styles.sectionTitle}>Implementation Steps</ThemedText>
           </View>
           {lever.implementationGuide.map((step, index) => (
             <View key={index} style={[styles.stepItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -154,7 +154,7 @@ export default function LeverDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <IconSymbol name="cpu" size={24} color={colors.tint} />
-            <ThemedText style={styles.sectionTitle}>Empfohlene KI-Tools</ThemedText>
+            <ThemedText style={styles.sectionTitle}>Recommended AI Tools</ThemedText>
           </View>
           {lever.aiTools.map((tool, index) => (
             <View

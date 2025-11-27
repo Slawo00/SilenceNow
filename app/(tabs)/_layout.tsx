@@ -28,21 +28,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="goals"
         options={{
-          title: 'Ziele',
+          title: 'Goals',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="target" color={color} />,
         }}
       />
       <Tabs.Screen
         name="tools"
         options={{
-          title: 'KI-Tools',
+          title: 'AI Tools',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="cpu" color={color} />,
         }}
       />

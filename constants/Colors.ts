@@ -1,42 +1,42 @@
-const primaryColor = '#4F46E5';
-const primaryColorDark = '#818CF8';
+const primaryColor = '#00D4AA';
+const primaryColorDark = '#00D4AA';
 
 export const Colors = {
   light: {
     text: '#1F2937',
     textSecondary: '#6B7280',
-    background: '#F9FAFB',
+    background: '#F8FAFC',
     card: '#FFFFFF',
     tint: primaryColor,
     icon: '#6B7280',
     tabIconDefault: '#9CA3AF',
     tabIconSelected: primaryColor,
-    border: '#E5E7EB',
+    border: '#E2E8F0',
     success: '#10B981',
     warning: '#F59E0B',
     error: '#EF4444',
-    accent: '#8B5CF6',
+    accent: '#00D4AA',
   },
   dark: {
-    text: '#F9FAFB',
-    textSecondary: '#9CA3AF',
-    background: '#111827',
-    card: '#1F2937',
+    text: '#F1F5F9',
+    textSecondary: '#94A3B8',
+    background: '#0F172A',
+    card: '#1E293B',
     tint: primaryColorDark,
-    icon: '#9CA3AF',
-    tabIconDefault: '#6B7280',
+    icon: '#94A3B8',
+    tabIconDefault: '#64748B',
     tabIconSelected: primaryColorDark,
-    border: '#374151',
+    border: '#334155',
     success: '#34D399',
     warning: '#FBBF24',
     error: '#F87171',
-    accent: '#A78BFA',
+    accent: '#00D4AA',
   },
 };
 
 export const GoalColors = {
-  speed: '#3B82F6',
+  speed: '#00D4AA',
   quality: '#10B981',
-  automation: '#8B5CF6',
-  insights: '#F59E0B',
+  automation: '#F59E0B',
+  compliance: '#3B82F6',
 };

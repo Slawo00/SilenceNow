@@ -18,18 +18,18 @@ export default function GoalDetailScreen() {
   if (!goal) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <ThemedText>Ziel nicht gefunden</ThemedText>
+        <ThemedText>Goal not found</ThemedText>
       </SafeAreaView>
     );
   }
 
   const getEffortLabel = (effort: string) => {
-    const labels: Record<string, string> = { low: 'Niedrig', medium: 'Mittel', high: 'Hoch' };
+    const labels: Record<string, string> = { low: 'Low', medium: 'Moderate', high: 'High' };
     return labels[effort] || effort;
   };
 
   const getImpactLabel = (impact: string) => {
-    const labels: Record<string, string> = { low: 'Niedrig', medium: 'Mittel', high: 'Hoch' };
+    const labels: Record<string, string> = { low: 'Low', medium: 'Moderate', high: 'High' };
     return labels[impact] || impact;
   };
 
@@ -72,12 +72,12 @@ export default function GoalDetailScreen() {
           </ThemedText>
           <View style={[styles.leverCount, { backgroundColor: goal.color }]}>
             <ThemedText style={styles.leverCountText}>
-              {goal.levers.length} strategische Hebel
+              {goal.levers.length} Strategic Levers
             </ThemedText>
           </View>
         </View>
 
-        <ThemedText style={styles.sectionTitle}>Strategische Hebel</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Strategic Levers</ThemedText>
 
         {goal.levers.map((lever, index) => (
           <TouchableOpacity
@@ -104,7 +104,7 @@ export default function GoalDetailScreen() {
 
             <View style={styles.leverMeta}>
               <View style={styles.metaItem}>
-                <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Aufwand:</ThemedText>
+                <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Effort:</ThemedText>
                 <View style={[styles.metaBadge, { backgroundColor: getEffortColor(lever.effort) + '20' }]}>
                   <ThemedText style={[styles.metaValue, { color: getEffortColor(lever.effort) }]}>
                     {getEffortLabel(lever.effort)}
@@ -124,7 +124,7 @@ export default function GoalDetailScreen() {
             <View style={styles.toolsPreview}>
               <IconSymbol name="cpu" size={14} color={colors.textSecondary} />
               <ThemedText style={[styles.toolsPreviewText, { color: colors.textSecondary }]}>
-                {lever.aiTools.length} KI-Tools empfohlen
+                {lever.aiTools.length} AI Tools recommended
               </ThemedText>
             </View>
           </TouchableOpacity>

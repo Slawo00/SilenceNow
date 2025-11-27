@@ -1,89 +1,103 @@
 # SigmaFinanceAI
 
-## Projektübersicht
+## Project Overview
 
-**SigmaFinanceAI** ist eine interaktive Finance-Coaching-Anwendung für CFOs und Finanzführungskräfte zur Optimierung ihres Monatsabschlussprozesses.
+**SigmaFinanceAI** is an interactive Finance Coaching application for CFOs and finance leaders to optimize their month-end close process.
 
-### Kernfunktionen
-- 4 Optimierungsziele (Goals)
-- 40 strategische Hebel (10 pro Ziel)
-- Detaillierte Implementierungsanleitungen pro Hebel
-- KI-Tool-Empfehlungen
+### Core Features
+- 4 Optimization Goals
+- 40 Strategic Levers (10 per goal)
+- Detailed implementation guides per lever
+- AI Tool recommendations
 
-## Projektstruktur
+### Corporate Identity
+- **Logo**: Sigma (Σ) symbol with "SigmaFinanceAI" branding
+- **Primary Color**: Cyan/Teal (#00D4AA)
+- **Background**: Dark theme (#0F172A / #1E293B)
+- **Tagline**: "AI. FINANCE. EXCELLENCE"
+
+## Project Structure
 
 ```
 app/
 ├── (tabs)/
-│   ├── _layout.tsx    # Tab-Navigation (Dashboard, Ziele, KI-Tools)
-│   ├── index.tsx      # Dashboard-Screen
-│   ├── goals.tsx      # Ziele-Übersicht
-│   └── tools.tsx      # KI-Tools-Übersicht mit Suche
+│   ├── _layout.tsx    # Tab Navigation (Home, Goals, AI Tools)
+│   ├── index.tsx      # Dashboard Screen
+│   ├── goals.tsx      # Goals Overview
+│   └── tools.tsx      # AI Tools with Search
 ├── goal/
-│   └── [id].tsx       # Goal Detail Screen mit 10 Hebeln
+│   └── [id].tsx       # Goal Detail Screen with 10 Levers
 ├── lever/
-│   └── [id].tsx       # Lever Detail Screen mit Implementierung
+│   └── [id].tsx       # Lever Detail Screen with Implementation Guide
 ├── _layout.tsx        # Root Layout
 └── +not-found.tsx     # 404 Screen
 
-components/             # Wiederverwendbare UI-Komponenten
-├── ui/                # UI-Basiskomponenten (Icons, TabBar)
-├── ThemedText.tsx     # Thema-bewusster Text
-└── ThemedView.tsx     # Thema-bewusste View
+components/             # Reusable UI Components
+├── ui/                # UI Base Components (Icons, TabBar)
+├── ThemedText.tsx     # Theme-aware Text
+└── ThemedView.tsx     # Theme-aware View
 
 constants/
-└── Colors.ts          # Farbpalette (Light/Dark Mode)
+└── Colors.ts          # Color Palette (Light/Dark Mode)
 
 data/
-└── goals.ts           # Datensturktur für Goals, Levers, AI-Tools
+└── goals.ts           # Data structure for Goals, Levers, AI Tools
 
 hooks/
-├── useColorScheme.ts  # System-Farbschema-Hook
-└── useThemeColor.ts   # Thema-Farben-Hook
+├── useColorScheme.ts  # System Color Scheme Hook
+└── useThemeColor.ts   # Theme Colors Hook
 ```
 
-## Technologie-Stack
+## Technology Stack
 
-- **Framework**: React Native mit Expo
+- **Framework**: React Native with Expo
 - **Navigation**: Expo Router (file-based routing)
 - **Styling**: React Native StyleSheet
 - **Theming**: Light/Dark Mode Support
-- **Plattformen**: iOS, Android, Web
+- **Platforms**: iOS, Android, Web
 
-## Entwicklung
+## Development
 
 ### Start
 ```bash
 npx expo start
 ```
 
-### Web-Version
+### Web Version
 ```bash
-npx expo start --web
+npx expo start --web --port 5000
 ```
 
-## Datenstruktur
+## Data Structure
 
-### Goals (Optimierungsziele)
-1. **Schnelligkeit** - Beschleunigung des Monatsabschlusses
-2. **Qualität** - Erhöhung der Abschlussqualität
-3. **Automatisierung** - Maximale Automatisierung
-4. **Erkenntnisse** - Gewinnung wertvoller Insights
+### Goals (Optimization Goals)
+1. **Speed (Fast Close)** - Accelerate month-end close process
+2. **Quality & Accuracy** - Enhance data integrity and reduce errors
+3. **Automation** - Streamline operations with intelligent automation
+4. **Compliance & Governance** - Strengthen controls and ensure regulatory adherence
 
-### Levers (Hebel)
-Jedes Ziel hat 10 strategische Hebel mit:
-- Titel und Kurzbeschreibung
-- 5-Schritte Implementierungsanleitung
-- Vorteile/Benefits
-- 2 empfohlene KI-Tools
-- Aufwand-/Impact-Bewertung
+### Levers (Strategic Levers)
+Each goal has 10 strategic levers with:
+- Title and short description
+- 5-step implementation guide
+- Benefits
+- 2 recommended AI Tools
+- Effort/Impact assessment (Low/Moderate/High)
 
-## Letzte Änderungen
+## Recent Changes
 
-- **26.11.2025**: Initiale Erstellung der SigmaFinanceAI App
-  - Dashboard mit Übersicht und Statistiken
-  - Goals-Screen mit 4 Optimierungszielen
-  - Goal-Detail-Screen mit 10 Hebeln
-  - Lever-Detail-Screen mit Implementierungsanleitung
-  - KI-Tools-Screen mit Suche und Filterung
-  - Dark/Light Mode Support
+- **27.11.2025**: Complete English localization and CI update
+  - Updated all UI text to English
+  - Applied corporate identity (Sigma logo, cyan/teal primary color)
+  - Updated goal names: Speed, Quality & Accuracy, Automation, Compliance & Governance
+  - Translated all 40 levers to English with implementation guides
+  - Added comprehensive icon mappings for web compatibility
+  - Updated tab navigation labels (Home, Goals, AI Tools)
+
+- **26.11.2025**: Initial creation of SigmaFinanceAI App
+  - Dashboard with overview and statistics
+  - Goals screen with 4 optimization goals
+  - Goal detail screen with 10 levers
+  - Lever detail screen with implementation guide
+  - AI Tools screen with search and filtering
+  - Dark/Light Mode support

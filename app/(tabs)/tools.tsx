@@ -64,9 +64,9 @@ export default function ToolsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <ThemedText style={styles.title}>KI-Tools</ThemedText>
+        <ThemedText style={styles.title}>AI Tools</ThemedText>
         <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
-          {allTools.length} empfohlene Tools für Ihren Monatsabschluss
+          {allTools.length} recommended tools for your month-end close
         </ThemedText>
       </View>
 
@@ -74,7 +74,7 @@ export default function ToolsScreen() {
         <IconSymbol name="magnifyingglass" size={20} color={colors.icon} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Tools durchsuchen..."
+          placeholder="Search tools..."
           placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -100,7 +100,7 @@ export default function ToolsScreen() {
           onPress={() => setSelectedCategory(null)}
         >
           <ThemedText style={[styles.categoryText, { color: !selectedCategory ? '#fff' : colors.text }]}>
-            Alle
+            All
           </ThemedText>
         </TouchableOpacity>
         {categories.map((category) => (
@@ -126,7 +126,7 @@ export default function ToolsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.toolsList}>
         <ThemedText style={[styles.resultsCount, { color: colors.textSecondary }]}>
-          {filteredTools.length} Tool{filteredTools.length !== 1 ? 's' : ''} gefunden
+          {filteredTools.length} Tool{filteredTools.length !== 1 ? 's' : ''} found
         </ThemedText>
 
         {filteredTools.map((tool, index) => (

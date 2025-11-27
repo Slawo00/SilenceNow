@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -16,53 +16,44 @@ export default function GoalsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <ThemedText style={styles.title}>Optimierungsziele</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
-            4 strategische Ziele für Ihren Monatsabschluss
-          </ThemedText>
+          <View style={styles.logoRow}>
+            <Text style={[styles.sigmaSymbol, { color: colors.text }]}>Σ</Text>
+            <View>
+              <View style={styles.logoTextRow}>
+                <ThemedText style={styles.logoText}>Sigma</ThemedText>
+                <ThemedText style={[styles.logoText, { color: colors.tint }]}>Finance</ThemedText>
+                <ThemedText style={[styles.logoAccent, { color: colors.tint }]}>AI</ThemedText>
+              </View>
+              <ThemedText style={[styles.tagline, { color: colors.textSecondary }]}>
+                AI. FINANCE. EXCELLENCE
+              </ThemedText>
+            </View>
+          </View>
         </View>
 
-        {goals.map((goal, index) => (
+        <ThemedText style={styles.pageTitle}>Optimization Goals</ThemedText>
+        <ThemedText style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
+          Select a goal to view strategic levers and implementation guides
+        </ThemedText>
+
+        {goals.map((goal) => (
           <TouchableOpacity
             key={goal.id}
             style={[styles.goalCard, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => router.push(`/goal/${goal.id}`)}
             activeOpacity={0.7}
           >
-            <View style={styles.goalHeader}>
-              <View style={[styles.goalIconContainer, { backgroundColor: goal.color + '20' }]}>
-                <IconSymbol name={goal.icon as any} size={32} color={goal.color} />
-              </View>
-              <View style={styles.goalInfo}>
-                <ThemedText style={styles.goalTitle}>{goal.title}</ThemedText>
-                <ThemedText style={[styles.goalDescription, { color: colors.textSecondary }]}>
-                  {goal.description}
-                </ThemedText>
-              </View>
-              <IconSymbol name="chevron.right" size={20} color={colors.icon} />
+            <View style={[styles.goalIconContainer, { backgroundColor: goal.color + '20' }]}>
+              <IconSymbol name={goal.icon as any} size={36} color={goal.color} />
             </View>
-
+            <ThemedText style={styles.goalTitle}>{goal.title}</ThemedText>
+            <ThemedText style={[styles.goalDescription, { color: colors.textSecondary }]}>
+              {goal.description}
+            </ThemedText>
             <View style={[styles.leversBadge, { backgroundColor: goal.color + '15' }]}>
-              <IconSymbol name="slider.horizontal.3" size={16} color={goal.color} />
               <ThemedText style={[styles.leversText, { color: goal.color }]}>
-                {goal.levers.length} strategische Hebel
+                {goal.levers.length} Strategic Levers
               </ThemedText>
-            </View>
-
-            <View style={styles.leverPreview}>
-              {goal.levers.slice(0, 3).map((lever, idx) => (
-                <View key={lever.id} style={styles.leverPreviewItem}>
-                  <View style={[styles.leverDot, { backgroundColor: goal.color }]} />
-                  <ThemedText style={[styles.leverPreviewText, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {lever.title}
-                  </ThemedText>
-                </View>
-              ))}
-              {goal.levers.length > 3 && (
-                <ThemedText style={[styles.moreLevers, { color: colors.tint }]}>
-                  +{goal.levers.length - 3} weitere Hebel
-                </ThemedText>
-              )}
             </View>
           </TouchableOpacity>
         ))}
@@ -80,86 +71,83 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 8,
   },
-  title: {
-    fontSize: 28,
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sigmaSymbol: {
+    fontSize: 36,
+    fontWeight: '300',
+    marginRight: 10,
+  },
+  logoTextRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  logoText: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  logoAccent: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  tagline: {
+    fontSize: 9,
+    letterSpacing: 1.5,
+    marginTop: 2,
+  },
+  pageTitle: {
+    fontSize: 24,
     fontWeight: '800',
+    paddingHorizontal: 20,
+    marginTop: 24,
   },
-  subtitle: {
-    fontSize: 15,
+  pageSubtitle: {
+    fontSize: 14,
+    paddingHorizontal: 20,
     marginTop: 8,
-    lineHeight: 22,
+    marginBottom: 24,
+    lineHeight: 20,
   },
   goalCard: {
     marginHorizontal: 20,
     marginBottom: 16,
-    padding: 20,
+    padding: 24,
     borderRadius: 20,
     borderWidth: 1,
-  },
-  goalHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
   goalIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 72,
+    height: 72,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  goalInfo: {
-    flex: 1,
-    marginLeft: 16,
-    marginRight: 8,
+    marginBottom: 16,
   },
   goalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
   },
   goalDescription: {
-    fontSize: 13,
-    marginTop: 4,
-    lineHeight: 18,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
   },
   leversBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
-    marginTop: 16,
-    gap: 6,
   },
   leversText: {
     fontSize: 13,
     fontWeight: '600',
-  },
-  leverPreview: {
-    marginTop: 16,
-    gap: 8,
-  },
-  leverPreviewItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  leverDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  leverPreviewText: {
-    fontSize: 14,
-    flex: 1,
-  },
-  moreLevers: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 4,
-    marginLeft: 16,
   },
   bottomPadding: {
     height: 100,

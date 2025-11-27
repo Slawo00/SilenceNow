@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -14,31 +14,33 @@ export default function DashboardScreen() {
   const colors = Colors[colorScheme];
 
   const stats = [
-    { label: 'Ziele', value: '4', icon: 'target' as const },
-    { label: 'Hebel', value: '40', icon: 'slider.horizontal.3' as const },
-    { label: 'KI-Tools', value: '80+', icon: 'cpu' as const },
+    { label: 'GOALS', value: '4' },
+    { label: 'STRATEGIC LEVERS', value: '40' },
   ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <ThemedText style={styles.logo}>Sigma</ThemedText>
-          <ThemedText style={[styles.logoAccent, { color: colors.tint }]}>FinanceAI</ThemedText>
+          <View style={styles.logoContainer}>
+            <Text style={[styles.sigmaSymbol, { color: colors.text }]}>Σ</Text>
+            <View style={styles.logoTextContainer}>
+              <View style={styles.logoRow}>
+                <ThemedText style={styles.logoText}>Sigma</ThemedText>
+                <ThemedText style={[styles.logoText, { color: colors.tint }]}>Finance</ThemedText>
+                <ThemedText style={[styles.logoAccent, { color: colors.tint }]}>AI</ThemedText>
+              </View>
+              <ThemedText style={[styles.tagline, { color: colors.textSecondary }]}>
+                AI. FINANCE. EXCELLENCE
+              </ThemedText>
+            </View>
+          </View>
         </View>
-
-        <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Finance Coaching für CFOs
-        </ThemedText>
 
         <View style={styles.statsContainer}>
           {stats.map((stat, index) => (
-            <View
-              key={index}
-              style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-            >
-              <IconSymbol name={stat.icon} size={24} color={colors.tint} />
-              <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
+            <View key={index} style={styles.statItem}>
+              <ThemedText style={[styles.statValue, { color: colors.tint }]}>{stat.value}</ThemedText>
               <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
                 {stat.label}
               </ThemedText>
@@ -46,9 +48,16 @@ export default function DashboardScreen() {
           ))}
         </View>
 
-        <ThemedText style={styles.sectionTitle}>Optimierungsziele</ThemedText>
+        <View style={[styles.toolsHighlight, { borderColor: colors.tint }]}>
+          <ThemedText style={[styles.toolsValue, { color: colors.tint }]}>50+</ThemedText>
+          <ThemedText style={[styles.toolsLabel, { color: colors.textSecondary }]}>
+            RECOMMENDED TOOLS
+          </ThemedText>
+        </View>
 
-        <View style={styles.goalsGrid}>
+        <ThemedText style={styles.sectionTitle}>Select Your Optimization Goal</ThemedText>
+
+        <View style={styles.goalsContainer}>
           {goals.map((goal) => (
             <TouchableOpacity
               key={goal.id}
@@ -57,24 +66,14 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
             >
               <View style={[styles.goalIconContainer, { backgroundColor: goal.color + '20' }]}>
-                <IconSymbol name={goal.icon as any} size={28} color={goal.color} />
+                <IconSymbol name={goal.icon as any} size={32} color={goal.color} />
               </View>
               <ThemedText style={styles.goalTitle}>{goal.title}</ThemedText>
-              <ThemedText style={[styles.goalLevers, { color: colors.textSecondary }]}>
-                {goal.levers.length} Hebel
+              <ThemedText style={[styles.goalDescription, { color: colors.textSecondary }]} numberOfLines={2}>
+                {goal.description}
               </ThemedText>
             </TouchableOpacity>
           ))}
-        </View>
-
-        <View style={[styles.infoCard, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' }]}>
-          <IconSymbol name="lightbulb.fill" size={24} color={colors.tint} />
-          <View style={styles.infoContent}>
-            <ThemedText style={styles.infoTitle}>Tipp des Tages</ThemedText>
-            <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
-              Beginnen Sie mit dem Hebel "Automatisierte Kontenabstimmung" - er bietet den schnellsten ROI mit mittlerem Implementierungsaufwand.
-            </ThemedText>
-          </View>
         </View>
 
         <View style={styles.bottomPadding} />
@@ -88,101 +87,110 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
+    paddingBottom: 24,
   },
-  logo: {
-    fontSize: 32,
-    fontWeight: '800',
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sigmaSymbol: {
+    fontSize: 48,
+    fontWeight: '300',
+    marginRight: 12,
+  },
+  logoTextContainer: {
+    flex: 1,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  logoText: {
+    fontSize: 24,
+    fontWeight: '700',
   },
   logoAccent: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '700',
   },
-  subtitle: {
-    fontSize: 16,
-    paddingHorizontal: 20,
-    marginTop: 4,
+  tagline: {
+    fontSize: 11,
+    letterSpacing: 2,
+    marginTop: 2,
   },
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    marginTop: 24,
-    gap: 12,
+    marginTop: 8,
+    gap: 32,
   },
-  statCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
+  statItem: {
     alignItems: 'center',
-    borderWidth: 1,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 36,
     fontWeight: '700',
-    marginTop: 8,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  toolsHighlight: {
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 24,
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+  toolsValue: {
+    fontSize: 42,
+    fontWeight: '700',
+  },
+  toolsLabel: {
+    fontSize: 11,
+    letterSpacing: 1,
     marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     paddingHorizontal: 20,
     marginTop: 32,
-    marginBottom: 16,
+    marginBottom: 20,
+    textAlign: 'center',
   },
-  goalsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 14,
-    gap: 12,
+  goalsContainer: {
+    paddingHorizontal: 20,
+    gap: 16,
   },
   goalCard: {
-    width: '47%',
-    padding: 16,
-    borderRadius: 16,
+    padding: 24,
+    borderRadius: 20,
     borderWidth: 1,
+    alignItems: 'center',
   },
   goalIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   goalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  goalLevers: {
-    fontSize: 13,
-    marginTop: 4,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginTop: 24,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 12,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
+  goalDescription: {
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 13,
-    lineHeight: 18,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   bottomPadding: {
     height: 100,
