@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -16,19 +16,11 @@ export default function GoalsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Text style={[styles.sigmaSymbol, { color: colors.text }]}>Σ</Text>
-            <View>
-              <View style={styles.logoTextRow}>
-                <ThemedText style={styles.logoText}>Sigma</ThemedText>
-                <ThemedText style={[styles.logoText, { color: colors.tint }]}>Finance</ThemedText>
-                <ThemedText style={[styles.logoAccent, { color: colors.tint }]}>AI</ThemedText>
-              </View>
-              <ThemedText style={[styles.tagline, { color: colors.textSecondary }]}>
-                AI. FINANCE. EXCELLENCE
-              </ThemedText>
-            </View>
-          </View>
+          <Image
+            source={require('../../assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <ThemedText style={styles.pageTitle}>Optimization Goals</ThemedText>
@@ -72,32 +64,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
-  },
-  logoRow: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
-  sigmaSymbol: {
-    fontSize: 36,
-    fontWeight: '300',
-    marginRight: 10,
-  },
-  logoTextRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  logoAccent: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  tagline: {
-    fontSize: 9,
-    letterSpacing: 1.5,
-    marginTop: 2,
+  logo: {
+    width: 220,
+    height: 130,
   },
   pageTitle: {
     fontSize: 24,

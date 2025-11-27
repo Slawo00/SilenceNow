@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -22,19 +22,11 @@ export default function DashboardScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Text style={[styles.sigmaSymbol, { color: colors.text }]}>Σ</Text>
-            <View style={styles.logoTextContainer}>
-              <View style={styles.logoRow}>
-                <ThemedText style={styles.logoText}>Sigma</ThemedText>
-                <ThemedText style={[styles.logoText, { color: colors.tint }]}>Finance</ThemedText>
-                <ThemedText style={[styles.logoAccent, { color: colors.tint }]}>AI</ThemedText>
-              </View>
-              <ThemedText style={[styles.tagline, { color: colors.textSecondary }]}>
-                AI. FINANCE. EXCELLENCE
-              </ThemedText>
-            </View>
-          </View>
+          <Image
+            source={require('../../assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.statsContainer}>
@@ -89,36 +81,12 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 24,
-  },
-  logoContainer: {
-    flexDirection: 'row',
+    paddingBottom: 8,
     alignItems: 'center',
   },
-  sigmaSymbol: {
-    fontSize: 48,
-    fontWeight: '300',
-    marginRight: 12,
-  },
-  logoTextContainer: {
-    flex: 1,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  logoAccent: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  tagline: {
-    fontSize: 11,
-    letterSpacing: 2,
-    marginTop: 2,
+  logo: {
+    width: 240,
+    height: 140,
   },
   statsContainer: {
     flexDirection: 'row',
