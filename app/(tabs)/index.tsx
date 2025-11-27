@@ -1,7 +1,6 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View, Image } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
@@ -9,45 +8,52 @@ import { goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DashboardScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? 'dark';
   const router = useRouter();
-  const colors = Colors[colorScheme];
-
-  const stats = [
-    { label: 'GOALS', value: '4' },
-    { label: 'STRATEGIC LEVERS', value: '40' },
-  ];
+  const colors = Colors.dark;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Image
-            source={require('../../assets/images/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
-        <View style={styles.statsContainer}>
-          {stats.map((stat, index) => (
-            <View key={index} style={styles.statItem}>
-              <ThemedText style={[styles.statValue, { color: colors.tint }]}>{stat.value}</ThemedText>
-              <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
-                {stat.label}
-              </ThemedText>
+          <View style={styles.headerLeft}>
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>
+                <Text style={styles.headerTitleWhite}>Sigma</Text>
+                <Text style={styles.headerTitleWhite}>Finance</Text>
+                <Text style={[styles.headerTitleAccent, { color: colors.tint }]}>AI</Text>
+              </Text>
+              <Text style={[styles.headerTagline, { color: colors.textSecondary }]}>
+                AI. FINANCE. EXCELLENCE
+              </Text>
             </View>
-          ))}
+          </View>
+          <TouchableOpacity style={[styles.menuButton, { backgroundColor: colors.card }]}>
+            <IconSymbol name="list.bullet" size={20} color={colors.text} />
+          </TouchableOpacity>
         </View>
 
-        <View style={[styles.toolsHighlight, { borderColor: colors.tint }]}>
-          <ThemedText style={[styles.toolsValue, { color: colors.tint }]}>50+</ThemedText>
-          <ThemedText style={[styles.toolsLabel, { color: colors.textSecondary }]}>
-            RECOMMENDED TOOLS
-          </ThemedText>
-        </View>
+        <View style={styles.heroSection}>
+          <View style={[styles.badge, { backgroundColor: colors.card }]}>
+            <View style={[styles.badgeDot, { backgroundColor: colors.tint }]} />
+            <Text style={[styles.badgeText, { color: colors.tint }]}>AI. FINANCE. EXCELLENCE</Text>
+          </View>
 
-        <ThemedText style={styles.sectionTitle}>Select Your Optimization Goal</ThemedText>
+          <Text style={styles.heroTitle}>
+            <Text style={{ color: colors.text }}>Transforming{'\n'}Finance with </Text>
+            <Text style={{ color: colors.tint }}>AI</Text>
+            <Text style={{ color: colors.text }}> &{'\n'}Automation</Text>
+          </Text>
+
+          <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
+            Select your optimization goal to receive ten proven strategies with detailed implementation guidance and recommended tools
+          </Text>
+        </View>
 
         <View style={styles.goalsContainer}>
           {goals.map((goal) => (
@@ -58,12 +64,15 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
             >
               <View style={[styles.goalIconContainer, { backgroundColor: goal.color + '20' }]}>
-                <IconSymbol name={goal.icon as any} size={32} color={goal.color} />
+                <IconSymbol name={goal.icon as any} size={28} color={goal.color} />
               </View>
-              <ThemedText style={styles.goalTitle}>{goal.title}</ThemedText>
-              <ThemedText style={[styles.goalDescription, { color: colors.textSecondary }]} numberOfLines={2}>
-                {goal.description}
-              </ThemedText>
+              <View style={styles.goalContent}>
+                <ThemedText style={[styles.goalTitle, { color: colors.text }]}>{goal.title}</ThemedText>
+                <ThemedText style={[styles.goalDescription, { color: colors.textSecondary }]} numberOfLines={2}>
+                  {goal.description}
+                </ThemedText>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           ))}
         </View>
@@ -79,86 +88,114 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-    alignItems: 'center',
-  },
-  logo: {
-    width: 240,
-    height: 140,
-  },
-  statsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 8,
-    gap: 32,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
-  statItem: {
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerLogo: {
+    width: 44,
+    height: 44,
+  },
+  headerTextContainer: {
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  headerTitleWhite: {
+    color: '#F1F5F9',
+  },
+  headerTitleAccent: {
+    fontWeight: '700',
+  },
+  headerTagline: {
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroSection: {
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 40,
     alignItems: 'center',
   },
-  statValue: {
-    fontSize: 36,
-    fontWeight: '700',
-  },
-  statLabel: {
-    fontSize: 11,
-    letterSpacing: 1,
-    marginTop: 4,
-  },
-  toolsHighlight: {
+  badge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginTop: 24,
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    gap: 8,
+    marginBottom: 32,
   },
-  toolsValue: {
-    fontSize: 42,
-    fontWeight: '700',
+  badgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  toolsLabel: {
-    fontSize: 11,
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
     letterSpacing: 1,
-    marginTop: 4,
   },
-  sectionTitle: {
-    fontSize: 22,
+  heroTitle: {
+    fontSize: 38,
     fontWeight: '700',
-    paddingHorizontal: 20,
-    marginTop: 32,
-    marginBottom: 20,
     textAlign: 'center',
+    lineHeight: 48,
+    marginBottom: 24,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 26,
+    paddingHorizontal: 10,
   },
   goalsContainer: {
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 12,
   },
   goalCard: {
-    padding: 24,
-    borderRadius: 20,
-    borderWidth: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 16,
   },
   goalIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+  },
+  goalContent: {
+    flex: 1,
   },
   goalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 8,
-    textAlign: 'center',
+    marginBottom: 4,
   },
   goalDescription: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   bottomPadding: {
     height: 100,

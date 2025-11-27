@@ -86,6 +86,14 @@ Each goal has 10 strategic levers with:
 
 ## Recent Changes
 
+- **27.11.2025**: Complete UI redesign matching website style
+  - Dark navy background (#0F172A) on all screens
+  - New header with compact logo, branding text, and hamburger menu
+  - Hero section with "AI. FINANCE. EXCELLENCE" badge
+  - Large headline "Transforming Finance with AI & Automation" with highlighted "AI"
+  - Horizontal goal cards with icons, descriptions, and chevrons
+  - Consistent dark theme across Dashboard and Goals screens
+
 - **27.11.2025**: Integrated custom logo image
   - Added user-provided ΣFinanceAI logo image (Sigma symbol with network graphic)
   - Logo displayed on Dashboard and Goals screens

@@ -33,6 +33,7 @@ const MAPPING = {
   'xmark.circle.fill': 'cancel',
   'checkmark.circle.fill': 'check-circle',
   'list.number': 'format-list-numbered',
+  'list.bullet': 'menu',
   'star.fill': 'star',
   'chart.bar.fill': 'bar-chart',
   'doc.text.fill': 'description',

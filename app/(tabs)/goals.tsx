@@ -1,32 +1,47 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View, Image } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GoalsScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
   const router = useRouter();
-  const colors = Colors[colorScheme];
+  const colors = Colors.dark;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Image
-            source={require('../../assets/images/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <View style={styles.headerLeft}>
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>
+                <Text style={styles.headerTitleWhite}>Sigma</Text>
+                <Text style={styles.headerTitleWhite}>Finance</Text>
+                <Text style={[styles.headerTitleAccent, { color: colors.tint }]}>AI</Text>
+              </Text>
+              <Text style={[styles.headerTagline, { color: colors.textSecondary }]}>
+                AI. FINANCE. EXCELLENCE
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity style={[styles.menuButton, { backgroundColor: colors.card }]}>
+            <IconSymbol name="list.bullet" size={20} color={colors.text} />
+          </TouchableOpacity>
         </View>
 
-        <ThemedText style={styles.pageTitle}>Optimization Goals</ThemedText>
-        <ThemedText style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
-          Select a goal to view strategic levers and implementation guides
-        </ThemedText>
+        <View style={styles.titleSection}>
+          <ThemedText style={[styles.pageTitle, { color: colors.text }]}>Optimization Goals</ThemedText>
+          <ThemedText style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
+            Select a goal to view strategic levers and implementation guides
+          </ThemedText>
+        </View>
 
         {goals.map((goal) => (
           <TouchableOpacity
@@ -36,17 +51,20 @@ export default function GoalsScreen() {
             activeOpacity={0.7}
           >
             <View style={[styles.goalIconContainer, { backgroundColor: goal.color + '20' }]}>
-              <IconSymbol name={goal.icon as any} size={36} color={goal.color} />
+              <IconSymbol name={goal.icon as any} size={28} color={goal.color} />
             </View>
-            <ThemedText style={styles.goalTitle}>{goal.title}</ThemedText>
-            <ThemedText style={[styles.goalDescription, { color: colors.textSecondary }]}>
-              {goal.description}
-            </ThemedText>
-            <View style={[styles.leversBadge, { backgroundColor: goal.color + '15' }]}>
-              <ThemedText style={[styles.leversText, { color: goal.color }]}>
-                {goal.levers.length} Strategic Levers
+            <View style={styles.goalContent}>
+              <ThemedText style={[styles.goalTitle, { color: colors.text }]}>{goal.title}</ThemedText>
+              <ThemedText style={[styles.goalDescription, { color: colors.textSecondary }]}>
+                {goal.description}
               </ThemedText>
+              <View style={[styles.leversBadge, { backgroundColor: goal.color + '15' }]}>
+                <ThemedText style={[styles.leversText, { color: goal.color }]}>
+                  {goal.levers.length} Strategic Levers
+                </ThemedText>
+              </View>
             </View>
+            <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         ))}
 
@@ -61,63 +79,98 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  logo: {
-    width: 220,
-    height: 130,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '800',
     paddingHorizontal: 20,
-    marginTop: 24,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
-  pageSubtitle: {
-    fontSize: 14,
-    paddingHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  goalCard: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 24,
-    borderRadius: 20,
-    borderWidth: 1,
+  headerLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  goalIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
+  headerLogo: {
+    width: 44,
+    height: 44,
+  },
+  headerTextContainer: {
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  headerTitleWhite: {
+    color: '#F1F5F9',
+  },
+  headerTitleAccent: {
+    fontWeight: '700',
+  },
+  headerTagline: {
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  goalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+  titleSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 24,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '800',
     marginBottom: 8,
   },
+  pageSubtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  goalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 16,
+  },
+  goalIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalContent: {
+    flex: 1,
+  },
+  goalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
   goalDescription: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 8,
   },
   leversBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   leversText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
   },
   bottomPadding: {
