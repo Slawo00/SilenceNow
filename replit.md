@@ -11,7 +11,7 @@
 - AI Tool recommendations
 
 ### Corporate Identity
-- **Logo**: Sigma (Σ) symbol with "SigmaFinanceAI" branding
+- **Logo**: Custom ΣFinanceAI logo image (assets/images/logo.png) with Sigma symbol, network graphic, and branding
 - **Primary Color**: Cyan/Teal (#00D4AA)
 - **Background**: Dark theme (#0F172A / #1E293B)
 - **Tagline**: "AI. FINANCE. EXCELLENCE"
@@ -85,6 +85,11 @@ Each goal has 10 strategic levers with:
 - Effort/Impact assessment (Low/Moderate/High)
 
 ## Recent Changes
+
+- **27.11.2025**: Integrated custom logo image
+  - Added user-provided ΣFinanceAI logo image (Sigma symbol with network graphic)
+  - Logo displayed on Dashboard and Goals screens
+  - Replaced text-based logo with image asset (assets/images/logo.png)
 
 - **27.11.2025**: Complete English localization and CI update
   - Updated all UI text to English
