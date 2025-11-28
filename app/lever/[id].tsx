@@ -240,19 +240,6 @@ export default function LeverDetailScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <IconSymbol name="checkmark.circle.fill" size={22} color={colors.success} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Benefits</ThemedText>
-          </View>
-          {lever.benefits.map((benefit, index) => (
-            <View key={index} style={[styles.listItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={[styles.listDot, { backgroundColor: colors.success }]} />
-              <ThemedText style={[styles.listText, { color: colors.text }]}>{benefit}</ThemedText>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
             <IconSymbol name="exclamationmark.triangle.fill" size={22} color={colors.warning} />
             <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Challenges & Risks</ThemedText>
           </View>
@@ -272,21 +259,6 @@ export default function LeverDetailScreen() {
           {examples.map((example, index) => (
             <View key={index} style={[styles.exampleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <ThemedText style={[styles.exampleText, { color: colors.text }]}>{example}</ThemedText>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconSymbol name="list.number" size={22} color={parentGoal.color} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Implementation Steps</ThemedText>
-          </View>
-          {lever.implementationGuide.map((step, index) => (
-            <View key={index} style={[styles.stepItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={[styles.stepNumber, { backgroundColor: parentGoal.color }]}>
-                <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
-              </View>
-              <ThemedText style={[styles.stepText, { color: colors.text }]}>{step}</ThemedText>
             </View>
           ))}
         </View>
@@ -313,6 +285,34 @@ export default function LeverDetailScreen() {
             <View key={index} style={[styles.listItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={[styles.listDot, { backgroundColor: '#06B6D4' }]} />
               <ThemedText style={[styles.listText, { color: colors.text }]}>{item}</ThemedText>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="list.number" size={22} color={parentGoal.color} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Implementation Steps</ThemedText>
+          </View>
+          {lever.implementationGuide.map((step, index) => (
+            <View key={index} style={[styles.stepItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.stepNumber, { backgroundColor: parentGoal.color }]}>
+                <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
+              </View>
+              <ThemedText style={[styles.stepText, { color: colors.text }]}>{step}</ThemedText>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="checkmark.circle.fill" size={22} color={colors.success} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Benefits</ThemedText>
+          </View>
+          {lever.benefits.map((benefit, index) => (
+            <View key={index} style={[styles.listItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.listDot, { backgroundColor: colors.success }]} />
+              <ThemedText style={[styles.listText, { color: colors.text }]}>{benefit}</ThemedText>
             </View>
           ))}
         </View>
