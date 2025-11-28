@@ -167,6 +167,17 @@ Color-coded priority indicators on lever cards:
 
 ## Recent Changes
 
+- **28.11.2025**: Compact lever card design and section ordering
+  - Updated lever cards in Goal detail screen to compact 2-row CFO-optimized design
+  - Row 1: Number badge + Lever Title + chevron/checkmark status
+  - Row 2: Priority/Effort/Impact badges displayed horizontally
+  - Reordered Lever detail screen sections to match specification:
+    1. Priority badge → 2. Effort/Benefit → 3. Description → 4. Responsible Roles
+    5. Key KPIs → 6. Challenges & Risks → 7. Practical Examples
+    8. Technology Requirements → 9. Change Management → 10. Implementation Steps
+    11. Benefits → 12. AI Tools
+  - Improved overall card readability and visual hierarchy
+
 - **28.11.2025**: Drawer navigation and GlobalHeader implementation
   - Implemented right-side drawer navigation with hamburger menu
   - Created GlobalHeader component for consistent header across screens
