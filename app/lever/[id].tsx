@@ -6,6 +6,7 @@ import { Colors } from '@/constants/Colors';
 import { goals, Lever, Goal } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePlan } from '@/context/PlanContext';
+import GlobalHeader from '@/components/GlobalHeader';
 
 const defaultRoles = ['CFO', 'Controller', 'Finance Manager', 'Accounting Team'];
 const defaultKPIs = ['Process cycle time', 'Error rate reduction', 'Cost savings', 'Compliance score'];
@@ -34,7 +35,8 @@ export default function LeverDetailScreen() {
 
   if (!lever || !parentGoal) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <GlobalHeader title="Lever" showBack />
         <ThemedText>Lever not found</ThemedText>
       </SafeAreaView>
     );
@@ -132,6 +134,10 @@ export default function LeverDetailScreen() {
     );
   };
 
+  const handleToolPress = (toolName: string) => {
+    router.push(`/tool/${encodeURIComponent(toolName)}`);
+  };
+
   const roles = lever.responsibleRoles || defaultRoles;
   const kpis = lever.keyKPIs || defaultKPIs;
   const challenges = lever.challengesRisks || defaultChallenges;
@@ -141,16 +147,8 @@ export default function LeverDetailScreen() {
   const priority = lever.priority || (lever.impact === 'high' ? 'high' : lever.impact === 'medium' ? 'medium' : 'low');
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.tint} />
-        </TouchableOpacity>
-        <ThemedText style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-          {lever.title}
-        </ThemedText>
-        <View style={styles.backButton} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <GlobalHeader title={lever.title} showBack />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={[styles.heroCard, { backgroundColor: parentGoal.color + '15' }]}>
@@ -329,23 +327,23 @@ export default function LeverDetailScreen() {
               <TouchableOpacity
                 key={index}
                 style={[styles.toolChip, { backgroundColor: getCategoryColor(tool.category) + '20', borderColor: getCategoryColor(tool.category) + '40' }]}
-                onPress={() => tool.url && Linking.openURL(tool.url)}
+                onPress={() => handleToolPress(tool.name)}
                 activeOpacity={0.7}
               >
                 <ThemedText style={[styles.toolChipName, { color: getCategoryColor(tool.category) }]}>
                   {tool.name}
                 </ThemedText>
-                {tool.url && (
-                  <IconSymbol name="arrow.up.right" size={14} color={getCategoryColor(tool.category)} />
-                )}
+                <IconSymbol name="chevron.right" size={14} color={getCategoryColor(tool.category)} />
               </TouchableOpacity>
             ))}
           </View>
 
           {lever.aiTools.map((tool, index) => (
-            <View
+            <TouchableOpacity
               key={index}
               style={[styles.toolCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => handleToolPress(tool.name)}
+              activeOpacity={0.7}
             >
               <View style={styles.toolHeader}>
                 <View style={[styles.toolIcon, { backgroundColor: getCategoryColor(tool.category) + '20' }]}>
@@ -357,22 +355,14 @@ export default function LeverDetailScreen() {
                     {tool.description}
                   </ThemedText>
                 </View>
+                <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
               </View>
               <View style={[styles.toolCategory, { backgroundColor: getCategoryColor(tool.category) + '15' }]}>
                 <ThemedText style={[styles.toolCategoryText, { color: getCategoryColor(tool.category) }]}>
                   {tool.category}
                 </ThemedText>
               </View>
-              {tool.url && (
-                <TouchableOpacity
-                  style={[styles.openWebsiteBtn, { backgroundColor: getCategoryColor(tool.category) }]}
-                  onPress={() => Linking.openURL(tool.url!)}
-                >
-                  <IconSymbol name="arrow.up.right" size={16} color="#fff" />
-                  <ThemedText style={styles.openWebsiteBtnText}>Open Website</ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -385,25 +375,6 @@ export default function LeverDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
   },
   heroCard: {
     marginHorizontal: 20,
@@ -621,6 +592,7 @@ const styles = StyleSheet.create({
   toolInfo: {
     flex: 1,
     marginLeft: 12,
+    marginRight: 8,
   },
   toolName: {
     fontSize: 16,
@@ -639,20 +611,6 @@ const styles = StyleSheet.create({
   },
   toolCategoryText: {
     fontSize: 12,
-    fontWeight: '600',
-  },
-  openWebsiteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 6,
-  },
-  openWebsiteBtnText: {
-    color: '#fff',
-    fontSize: 14,
     fontWeight: '600',
   },
   bottomPadding: {

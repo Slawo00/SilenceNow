@@ -5,6 +5,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { getAllAITools, goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import GlobalHeader from '@/components/GlobalHeader';
 
 const toolUrls: Record<string, string> = {
   'BlackLine': 'https://www.blackline.com',
@@ -77,12 +78,8 @@ export default function ToolDetailScreen() {
 
   if (!tool) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <IconSymbol name="chevron.left" size={24} color={colors.tint} />
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <GlobalHeader title="Tool" showBack />
         <View style={styles.errorContainer}>
           <ThemedText style={[styles.errorText, { color: colors.text }]}>Tool not found</ThemedText>
         </View>
@@ -129,16 +126,8 @@ export default function ToolDetailScreen() {
   const websiteUrl = tool.url || toolUrls[tool.name];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.tint} />
-        </TouchableOpacity>
-        <ThemedText style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-          {tool.name}
-        </ThemedText>
-        <View style={styles.backButton} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <GlobalHeader title={tool.name} showBack />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={[styles.heroCard, { backgroundColor: categoryColor + '15' }]}>
@@ -265,25 +254,6 @@ export default function ToolDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
   },
   errorContainer: {
     flex: 1,

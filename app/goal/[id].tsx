@@ -6,6 +6,13 @@ import { Colors } from '@/constants/Colors';
 import { goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePlan } from '@/context/PlanContext';
+import GlobalHeader from '@/components/GlobalHeader';
+
+const priorityColors: Record<string, string> = {
+  high: '#EF4444',
+  medium: '#F59E0B',
+  low: '#10B981',
+};
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -17,7 +24,8 @@ export default function GoalDetailScreen() {
 
   if (!goal) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <GlobalHeader title="Goal" showBack />
         <ThemedText>Goal not found</ThemedText>
       </SafeAreaView>
     );
@@ -54,6 +62,13 @@ export default function GoalDetailScreen() {
     return impactColors[impact] || colors.textSecondary;
   };
 
+  const getPriority = (lever: typeof goal.levers[0]) => {
+    if (lever.priority) return lever.priority;
+    if (lever.impact === 'high') return 'high';
+    if (lever.impact === 'medium') return 'medium';
+    return 'low';
+  };
+
   const handleAddAllToP = async () => {
     const leversToAdd = goal.levers
       .filter(l => !isLeverInPlan(l.id))
@@ -81,14 +96,8 @@ export default function GoalDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.tint} />
-        </TouchableOpacity>
-        <ThemedText style={[styles.headerTitle, { color: colors.text }]}>{goal.title}</ThemedText>
-        <View style={styles.backButton} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <GlobalHeader title={goal.title} showBack />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={[styles.heroCard, { backgroundColor: goal.color + '15' }]}>
@@ -140,6 +149,8 @@ export default function GoalDetailScreen() {
 
         {goal.levers.map((lever, index) => {
           const inPlan = isLeverInPlan(lever.id);
+          const priority = getPriority(lever);
+          
           return (
             <TouchableOpacity
               key={lever.id}
@@ -152,7 +163,9 @@ export default function GoalDetailScreen() {
                   <ThemedText style={styles.leverNumberText}>{index + 1}</ThemedText>
                 </View>
                 <View style={styles.leverInfo}>
-                  <ThemedText style={[styles.leverTitle, { color: colors.text }]}>{lever.title}</ThemedText>
+                  <View style={styles.leverTitleRow}>
+                    <ThemedText style={[styles.leverTitle, { color: colors.text }]}>{lever.title}</ThemedText>
+                  </View>
                   <ThemedText
                     style={[styles.leverDescription, { color: colors.textSecondary }]}
                     numberOfLines={2}
@@ -165,6 +178,14 @@ export default function GoalDetailScreen() {
                 ) : (
                   <IconSymbol name="chevron.right" size={20} color={colors.icon} />
                 )}
+              </View>
+
+              <View style={styles.badgeRow}>
+                <View style={[styles.priorityBadge, { backgroundColor: priorityColors[priority] + '20' }]}>
+                  <ThemedText style={[styles.priorityText, { color: priorityColors[priority] }]}>
+                    {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
+                  </ThemedText>
+                </View>
               </View>
 
               <View style={styles.leverMeta}>
@@ -189,7 +210,7 @@ export default function GoalDetailScreen() {
               <View style={styles.toolsPreview}>
                 <IconSymbol name="cpu" size={14} color={colors.textSecondary} />
                 <ThemedText style={[styles.toolsPreviewText, { color: colors.textSecondary }]}>
-                  {lever.aiTools.length} AI Tools recommended
+                  {lever.aiTools.length} AI Tool{lever.aiTools.length !== 1 ? 's' : ''} recommended
                 </ThemedText>
               </View>
             </TouchableOpacity>
@@ -205,23 +226,6 @@ export default function GoalDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
   },
   heroCard: {
     marginHorizontal: 20,
@@ -319,14 +323,34 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     marginRight: 8,
   },
+  leverTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   leverTitle: {
     fontSize: 16,
     fontWeight: '600',
+    flex: 1,
   },
   leverDescription: {
     fontSize: 13,
     marginTop: 4,
     lineHeight: 18,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  priorityBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  priorityText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   leverMeta: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View, TextInput, Linking } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, TextInput } from 'react-native';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
@@ -6,6 +6,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { getAllAITools, getToolCategories, goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import GlobalHeader from '@/components/GlobalHeader';
 
 const goalFilters = [
   { id: 'speed', name: 'Speed', color: '#00D4AA' },
@@ -90,7 +91,9 @@ export default function ToolsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <GlobalHeader showLogo />
+      
       <View style={styles.header}>
         <ThemedText style={[styles.title, { color: colors.text }]}>AI Tools</ThemedText>
         <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -246,7 +249,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
   },
   title: {
     fontSize: 28,

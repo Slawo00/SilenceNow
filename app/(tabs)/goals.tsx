@@ -1,41 +1,21 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import GlobalHeader from '@/components/GlobalHeader';
 
 export default function GoalsScreen() {
   const router = useRouter();
   const colors = Colors.dark;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Image
-              source={require('../../assets/images/logo.png')}
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>
-                <Text style={styles.headerTitleWhite}>Sigma</Text>
-                <Text style={styles.headerTitleWhite}>Finance</Text>
-                <Text style={[styles.headerTitleAccent, { color: colors.tint }]}>AI</Text>
-              </Text>
-              <Text style={[styles.headerTagline, { color: colors.textSecondary }]}>
-                AI. FINANCE. EXCELLENCE
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity style={[styles.menuButton, { backgroundColor: colors.card }]}>
-            <IconSymbol name="list.bullet" size={20} color={colors.text} />
-          </TouchableOpacity>
-        </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <GlobalHeader showLogo />
 
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.titleSection}>
           <ThemedText style={[styles.pageTitle, { color: colors.text }]}>Optimization Goals</ThemedText>
           <ThemedText style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
@@ -78,50 +58,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerLogo: {
-    width: 44,
-    height: 44,
-  },
-  headerTextContainer: {
-    gap: 2,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  headerTitleWhite: {
-    color: '#F1F5F9',
-  },
-  headerTitleAccent: {
-    fontWeight: '700',
-  },
-  headerTagline: {
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  menuButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   titleSection: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 12,
     paddingBottom: 24,
   },
   pageTitle: {

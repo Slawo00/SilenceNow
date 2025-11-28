@@ -4,10 +4,11 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-import { goals } from '@/data/goals';
+import { goals, Lever } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePlan } from '@/context/PlanContext';
 import { useOnboarding } from '@/context/OnboardingContext';
+import GlobalHeader from '@/components/GlobalHeader';
 
 const statusColors: Record<string, string> = {
   'Planned': '#6366F1',
@@ -17,11 +18,25 @@ const statusColors: Record<string, string> = {
 
 const statusOptions: Array<'Planned' | 'In progress' | 'Done'> = ['Planned', 'In progress', 'Done'];
 
+const priorityColors: Record<string, string> = {
+  high: '#EF4444',
+  medium: '#F59E0B',
+  low: '#10B981',
+};
+
 export default function PlanScreen() {
   const router = useRouter();
   const colors = Colors.dark;
   const { plan, updateLeverStatus, removeLever, isLoading } = usePlan();
   const { onboardingData } = useOnboarding();
+
+  const getLeverDetails = (leverId: string): Lever | undefined => {
+    for (const goal of goals) {
+      const lever = goal.levers.find(l => l.id === leverId);
+      if (lever) return lever;
+    }
+    return undefined;
+  };
 
   const groupedPlan = goals
     .map(goal => ({
@@ -57,7 +72,8 @@ export default function PlanScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <GlobalHeader showLogo />
         <View style={styles.loadingContainer}>
           <ThemedText style={{ color: colors.textSecondary }}>Loading...</ThemedText>
         </View>
@@ -66,7 +82,9 @@ export default function PlanScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <GlobalHeader showLogo />
+      
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <ThemedText style={[styles.pageTitle, { color: colors.text }]}>My Plan</ThemedText>
@@ -122,43 +140,62 @@ export default function PlanScreen() {
                   </View>
                 </View>
 
-                {levers.map((lever) => (
-                  <View
-                    key={lever.leverId}
-                    style={[styles.leverCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  >
-                    <TouchableOpacity
-                      style={styles.leverContent}
-                      onPress={() => router.push(`/lever/${lever.leverId}`)}
-                      activeOpacity={0.7}
+                {levers.map((lever) => {
+                  const leverDetails = getLeverDetails(lever.leverId);
+                  const priority = leverDetails?.priority || (lever.impact === 'high' ? 'high' : lever.impact === 'medium' ? 'medium' : 'low');
+                  const toolCount = leverDetails?.aiTools?.length || 0;
+                  
+                  return (
+                    <View
+                      key={lever.leverId}
+                      style={[styles.leverCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                     >
-                      <Text style={[styles.leverTitle, { color: colors.text }]}>{lever.leverTitle}</Text>
-                      <View style={styles.leverMeta}>
-                        <View style={[styles.metaBadge, { backgroundColor: colors.tint + '15' }]}>
-                          <Text style={[styles.metaText, { color: colors.tint }]}>Impact: {lever.impact}</Text>
+                      <TouchableOpacity
+                        style={styles.leverContent}
+                        onPress={() => router.push(`/lever/${lever.leverId}`)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.leverTitleRow}>
+                          <Text style={[styles.leverTitle, { color: colors.text }]}>{lever.leverTitle}</Text>
+                          <View style={[styles.priorityBadge, { backgroundColor: priorityColors[priority] + '20' }]}>
+                            <Text style={[styles.priorityText, { color: priorityColors[priority] }]}>
+                              {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                            </Text>
+                          </View>
                         </View>
-                        <View style={[styles.metaBadge, { backgroundColor: colors.warning + '15' }]}>
-                          <Text style={[styles.metaText, { color: colors.warning }]}>Effort: {lever.complexity}</Text>
+                        <View style={styles.leverMeta}>
+                          <View style={[styles.metaBadge, { backgroundColor: colors.tint + '15' }]}>
+                            <Text style={[styles.metaText, { color: colors.tint }]}>Impact: {lever.impact}</Text>
+                          </View>
+                          <View style={[styles.metaBadge, { backgroundColor: colors.warning + '15' }]}>
+                            <Text style={[styles.metaText, { color: colors.warning }]}>Effort: {lever.complexity}</Text>
+                          </View>
+                          {toolCount > 0 && (
+                            <View style={[styles.metaBadge, { backgroundColor: '#8B5CF6' + '15' }]}>
+                              <IconSymbol name="cpu" size={12} color="#8B5CF6" />
+                              <Text style={[styles.metaText, { color: '#8B5CF6' }]}>{toolCount}</Text>
+                            </View>
+                          )}
                         </View>
-                      </View>
-                    </TouchableOpacity>
+                      </TouchableOpacity>
 
-                    <View style={styles.leverActions}>
-                      <TouchableOpacity
-                        style={[styles.statusBtn, { backgroundColor: statusColors[lever.status] }]}
-                        onPress={() => handleStatusChange(lever.leverId, lever.status)}
-                      >
-                        <Text style={styles.statusBtnText}>{lever.status}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.removeBtn, { backgroundColor: colors.error + '15' }]}
-                        onPress={() => handleRemove(lever.leverId, lever.leverTitle)}
-                      >
-                        <IconSymbol name="xmark.circle.fill" size={18} color={colors.error} />
-                      </TouchableOpacity>
+                      <View style={styles.leverActions}>
+                        <TouchableOpacity
+                          style={[styles.statusBtn, { backgroundColor: statusColors[lever.status] }]}
+                          onPress={() => handleStatusChange(lever.leverId, lever.status)}
+                        >
+                          <Text style={styles.statusBtnText}>{lever.status}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.removeBtn, { backgroundColor: colors.error + '15' }]}
+                          onPress={() => handleRemove(lever.leverId, lever.leverTitle)}
+                        >
+                          <IconSymbol name="xmark.circle.fill" size={18} color={colors.error} />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             ))}
           </>
@@ -198,7 +235,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 12,
     paddingBottom: 16,
   },
   pageTitle: {
@@ -310,19 +347,39 @@ const styles = StyleSheet.create({
   leverContent: {
     marginBottom: 12,
   },
+  leverTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    gap: 10,
+  },
   leverTitle: {
     fontSize: 15,
     fontWeight: '600',
-    marginBottom: 8,
+    flex: 1,
   },
-  leverMeta: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  metaBadge: {
+  priorityBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
+  },
+  priorityText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  leverMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  metaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
   },
   metaText: {
     fontSize: 12,
