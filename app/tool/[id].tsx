@@ -3,56 +3,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-import { getAllAITools, goals } from '@/data/goals';
+import { getToolById, getToolByName, AIToolExtended } from '@/data/aiTools';
+import { goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '@/components/GlobalHeader';
 
-const toolUrls: Record<string, string> = {
-  'BlackLine': 'https://www.blackline.com',
-  'ReconArt': 'https://www.reconart.com',
-  'Workiva': 'https://www.workiva.com',
-  'FloQast': 'https://www.floqast.com',
-  'Fivetran': 'https://www.fivetran.com',
-  'Airbyte': 'https://www.airbyte.com',
-  'SAP S/4HANA': 'https://www.sap.com/products/erp/s4hana.html',
-  'Oracle Financials': 'https://www.oracle.com/erp/financials/',
-  'OneStream': 'https://www.onestream.com',
-  'Trintech Cadency': 'https://www.trintech.com',
-  'Prophix': 'https://www.prophix.com',
-  'Vic.ai': 'https://www.vic.ai',
-  'AppZen': 'https://www.appzen.com',
-  'SAP BPC': 'https://www.sap.com/products/business-planning-consolidation.html',
-  'CCH Tagetik': 'https://www.wolterskluwer.com/en/solutions/cch-tagetik',
-  'Power BI': 'https://powerbi.microsoft.com',
-  'Tableau': 'https://www.tableau.com',
-  'Trintech': 'https://www.trintech.com',
-  'MindBridge': 'https://www.mindbridge.ai',
-  'HighRadius': 'https://www.highradius.com',
-  'ServiceNow': 'https://www.servicenow.com',
-  'Talend': 'https://www.talend.com',
-  'Informatica': 'https://www.informatica.com',
-  'SAP GRC': 'https://www.sap.com/products/grc.html',
-  'Jedox': 'https://www.jedox.com',
-  'Anaplan': 'https://www.anaplan.com',
-  'SAP Access Control': 'https://www.sap.com/products/access-control.html',
-  'SailPoint': 'https://www.sailpoint.com',
-  'Celonis': 'https://www.celonis.com',
-  'UiPath Process Mining': 'https://www.uipath.com/product/process-mining',
-  'UiPath': 'https://www.uipath.com',
-  'Automation Anywhere': 'https://www.automationanywhere.com',
-  'ABBYY': 'https://www.abbyy.com',
-  'Kofax': 'https://www.kofax.com',
-  'HighRadius Collections': 'https://www.highradius.com/collections',
-  'Esker': 'https://www.esker.com',
-  'SAP Ariba': 'https://www.sap.com/products/ariba-network.html',
-  'Coupa': 'https://www.coupa.com',
-  'Microsoft Power Automate': 'https://powerautomate.microsoft.com',
-  'Nintex': 'https://www.nintex.com',
-  'Vertex': 'https://www.vertexinc.com',
-  'Avalara': 'https://www.avalara.com',
-  'Audit Board': 'https://www.auditboard.com',
-  'Kyriba': 'https://www.kyriba.com',
-  'TreasuryXpress': 'https://www.treasuryxpress.com',
+const goalInfo: Record<string, { name: string; color: string; icon: string }> = {
+  speed: { name: 'Speed (Fast Close)', color: '#00D4AA', icon: 'bolt.fill' },
+  quality: { name: 'Quality & Accuracy', color: '#10B981', icon: 'checkmark.circle.fill' },
+  automation: { name: 'Automation', color: '#F59E0B', icon: 'gearshape.fill' },
+  compliance: { name: 'Compliance & Governance', color: '#6366F1', icon: 'shield.fill' },
 };
 
 export default function ToolDetailScreen() {
@@ -60,19 +20,18 @@ export default function ToolDetailScreen() {
   const router = useRouter();
   const colors = Colors.dark;
 
-  const toolName = decodeURIComponent(id || '');
-  const allTools = getAllAITools();
-  const tool = allTools.find(t => t.name === toolName);
-
-  const toolGoals = goals.filter(goal =>
-    goal.levers.some(lever =>
-      lever.aiTools.some(t => t.name === toolName)
-    )
-  );
+  const toolId = decodeURIComponent(id || '');
+  let tool: AIToolExtended | undefined = getToolById(toolId);
+  
+  if (!tool) {
+    tool = getToolByName(toolId);
+  }
 
   const relatedLevers = goals.flatMap(goal =>
     goal.levers
-      .filter(lever => lever.aiTools.some(t => t.name === toolName))
+      .filter(lever => lever.aiTools.some(t => 
+        t.name.toLowerCase() === tool?.name.toLowerCase()
+      ))
       .map(lever => ({ lever, goal }))
   );
 
@@ -96,6 +55,7 @@ export default function ToolDetailScreen() {
       'CPM': '#EC4899',
       'Close Management': '#6366F1',
       'FP&A': '#14B8A6',
+      'FP&A & Modeling': '#14B8A6',
       'BI': '#F97316',
       'Audit': '#EF4444',
       'AI Finance': '#8B5CF6',
@@ -107,14 +67,27 @@ export default function ToolDetailScreen() {
       'Tax': '#EAB308',
       'GRC': '#DC2626',
       'AP Automation': '#A855F7',
+      'Analytics': '#3B82F6',
+      'AI Reporting': '#EC4899',
+      'AI/ML': '#7C3AED',
+      'Compliance': '#6366F1',
+      'Data Management': '#059669',
+      'Data Provider': '#64748B',
+      'Expense Management': '#F59E0B',
+      'IC Management': '#10B981',
+      'NLG': '#EC4899',
+      'Process Intelligence': '#8B5CF6',
+      'Reporting': '#F59E0B',
+      'Risk': '#EF4444',
+      'Security': '#EF4444',
+      'Accounting Automation': '#00D4AA',
     };
     return categoryColors[category] || colors.tint;
   };
 
   const handleOpenWebsite = () => {
-    const url = tool.url || toolUrls[tool.name];
-    if (url) {
-      Linking.openURL(url).catch(() => {
+    if (tool?.url) {
+      Linking.openURL(tool.url).catch(() => {
         Alert.alert('Error', 'Unable to open website');
       });
     } else {
@@ -123,7 +96,6 @@ export default function ToolDetailScreen() {
   };
 
   const categoryColor = getCategoryColor(tool.category);
-  const websiteUrl = tool.url || toolUrls[tool.name];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -145,7 +117,7 @@ export default function ToolDetailScreen() {
           </View>
         </View>
 
-        {websiteUrl && (
+        {tool.url && (
           <TouchableOpacity
             style={[styles.websiteButton, { backgroundColor: categoryColor }]}
             onPress={handleOpenWebsite}
@@ -156,7 +128,26 @@ export default function ToolDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {toolGoals.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="star.fill" size={22} color={'#F59E0B'} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
+              Key Features
+            </ThemedText>
+          </View>
+          <View style={[styles.featuresCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {tool.keyFeatures.map((feature, index) => (
+              <View key={index} style={styles.featureItem}>
+                <View style={[styles.featureDot, { backgroundColor: categoryColor }]} />
+                <ThemedText style={[styles.featureText, { color: colors.text }]}>
+                  {feature}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {tool.recommendedGoals.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <IconSymbol name="target" size={22} color={colors.tint} />
@@ -165,17 +156,21 @@ export default function ToolDetailScreen() {
               </ThemedText>
             </View>
             <View style={styles.goalChipsContainer}>
-              {toolGoals.map(goal => (
-                <TouchableOpacity
-                  key={goal.id}
-                  style={[styles.goalChip, { backgroundColor: goal.color + '20', borderColor: goal.color + '40' }]}
-                  onPress={() => router.push(`/goal/${goal.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <IconSymbol name={goal.icon as any} size={18} color={goal.color} />
-                  <ThemedText style={[styles.goalChipText, { color: goal.color }]}>{goal.title}</ThemedText>
-                </TouchableOpacity>
-              ))}
+              {tool.recommendedGoals.map(goalId => {
+                const goal = goalInfo[goalId];
+                if (!goal) return null;
+                return (
+                  <TouchableOpacity
+                    key={goalId}
+                    style={[styles.goalChip, { backgroundColor: goal.color + '20', borderColor: goal.color + '40' }]}
+                    onPress={() => router.push(`/goal/${goalId}`)}
+                    activeOpacity={0.7}
+                  >
+                    <IconSymbol name={goal.icon as any} size={18} color={goal.color} />
+                    <ThemedText style={[styles.goalChipText, { color: goal.color }]}>{goal.name}</ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         )}
@@ -185,10 +180,10 @@ export default function ToolDetailScreen() {
             <View style={styles.sectionHeader}>
               <IconSymbol name="slider.horizontal.3" size={22} color={colors.tint} />
               <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
-                Related Strategic Levers
+                Related Strategic Levers ({relatedLevers.length})
               </ThemedText>
             </View>
-            {relatedLevers.map(({ lever, goal }) => (
+            {relatedLevers.slice(0, 5).map(({ lever, goal }) => (
               <TouchableOpacity
                 key={lever.id}
                 style={[styles.leverCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -200,46 +195,35 @@ export default function ToolDetailScreen() {
                     <IconSymbol name={goal.icon as any} size={14} color="#fff" />
                   </View>
                   <View style={styles.leverInfo}>
-                    <ThemedText style={[styles.leverTitle, { color: colors.text }]}>{lever.title}</ThemedText>
+                    <ThemedText style={[styles.leverTitle, { color: colors.text }]} numberOfLines={1}>
+                      {lever.title}
+                    </ThemedText>
                     <ThemedText style={[styles.leverGoalName, { color: goal.color }]}>{goal.title}</ThemedText>
                   </View>
                   <IconSymbol name="chevron.right" size={18} color={colors.textSecondary} />
                 </View>
               </TouchableOpacity>
             ))}
+            {relatedLevers.length > 5 && (
+              <ThemedText style={[styles.moreLeversText, { color: colors.textSecondary }]}>
+                +{relatedLevers.length - 5} more levers use this tool
+              </ThemedText>
+            )}
           </View>
         )}
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconSymbol name="lightbulb.fill" size={22} color={'#F59E0B'} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
-              Key Features
-            </ThemedText>
-          </View>
-          <View style={[styles.featuresCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.featureItem}>
-              <View style={[styles.featureDot, { backgroundColor: colors.tint }]} />
-              <ThemedText style={[styles.featureText, { color: colors.text }]}>
-                {tool.category} specialized solution
-              </ThemedText>
+          <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.infoRow}>
+              <ThemedText style={[styles.infoLabel, { color: colors.textSecondary }]}>Category</ThemedText>
+              <View style={[styles.infoBadge, { backgroundColor: categoryColor + '20' }]}>
+                <ThemedText style={[styles.infoBadgeText, { color: categoryColor }]}>{tool.category}</ThemedText>
+              </View>
             </View>
-            <View style={styles.featureItem}>
-              <View style={[styles.featureDot, { backgroundColor: colors.success }]} />
-              <ThemedText style={[styles.featureText, { color: colors.text }]}>
-                Enterprise-grade security and compliance
-              </ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <View style={[styles.featureDot, { backgroundColor: colors.warning }]} />
-              <ThemedText style={[styles.featureText, { color: colors.text }]}>
-                Seamless integration capabilities
-              </ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <View style={[styles.featureDot, { backgroundColor: '#8B5CF6' }]} />
-              <ThemedText style={[styles.featureText, { color: colors.text }]}>
-                AI-powered automation features
+            <View style={styles.infoRow}>
+              <ThemedText style={[styles.infoLabel, { color: colors.textSecondary }]}>Website</ThemedText>
+              <ThemedText style={[styles.infoValue, { color: colors.tint }]} numberOfLines={1}>
+                {tool.url ? new URL(tool.url).hostname : 'Not available'}
               </ThemedText>
             </View>
           </View>
@@ -374,6 +358,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  moreLeversText: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
   featuresCard: {
     padding: 16,
     borderRadius: 14,
@@ -394,6 +384,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     lineHeight: 20,
+  },
+  infoCard: {
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  infoLabel: {
+    fontSize: 14,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  infoBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  infoBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   bottomPadding: {
     height: 40,

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-import { getAllAITools, getToolCategories, goals } from '@/data/goals';
+import { aiToolsCatalog, getAllCategories, AIToolExtended } from '@/data/aiTools';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '@/components/GlobalHeader';
 
@@ -22,29 +22,15 @@ export default function ToolsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
-  const allTools = getAllAITools();
-  const categories = getToolCategories();
-
-  const getToolGoals = (toolName: string) => {
-    const toolGoals: string[] = [];
-    goals.forEach(goal => {
-      goal.levers.forEach(lever => {
-        lever.aiTools.forEach(tool => {
-          if (tool.name === toolName && !toolGoals.includes(goal.id)) {
-            toolGoals.push(goal.id);
-          }
-        });
-      });
-    });
-    return toolGoals;
-  };
+  const allTools = aiToolsCatalog;
+  const categories = getAllCategories();
 
   const filteredTools = useMemo(() => {
     return allTools.filter((tool) => {
       const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tool.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = !selectedCategory || tool.category === selectedCategory;
-      const matchesGoal = !selectedGoal || getToolGoals(tool.name).includes(selectedGoal);
+      const matchesGoal = !selectedGoal || tool.recommendedGoals.includes(selectedGoal);
       return matchesSearch && matchesCategory && matchesGoal;
     });
   }, [allTools, searchQuery, selectedCategory, selectedGoal]);
@@ -86,8 +72,8 @@ export default function ToolsScreen() {
     return categoryColors[category] || colors.tint;
   };
 
-  const handleToolPress = (toolName: string) => {
-    router.push(`/tool/${encodeURIComponent(toolName)}`);
+  const handleToolPress = (toolId: string) => {
+    router.push(`/tool/${encodeURIComponent(toolId)}`);
   };
 
   return (
@@ -189,53 +175,50 @@ export default function ToolsScreen() {
           {filteredTools.length} Tool{filteredTools.length !== 1 ? 's' : ''} found
         </ThemedText>
 
-        {filteredTools.map((tool, index) => {
-          const toolGoals = getToolGoals(tool.name);
-          return (
-            <TouchableOpacity
-              key={`${tool.name}-${index}`}
-              style={[styles.toolCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => handleToolPress(tool.name)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.toolHeader}>
-                <View style={[styles.toolIcon, { backgroundColor: getCategoryColor(tool.category) + '20' }]}>
-                  <IconSymbol name="cpu" size={24} color={getCategoryColor(tool.category)} />
-                </View>
-                <View style={styles.toolInfo}>
-                  <ThemedText style={[styles.toolName, { color: colors.text }]}>{tool.name}</ThemedText>
-                  <ThemedText style={[styles.toolDescription, { color: colors.textSecondary }]}>
-                    {tool.description}
-                  </ThemedText>
-                </View>
-                <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+        {filteredTools.map((tool) => (
+          <TouchableOpacity
+            key={tool.id}
+            style={[styles.toolCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => handleToolPress(tool.id)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.toolHeader}>
+              <View style={[styles.toolIcon, { backgroundColor: getCategoryColor(tool.category) + '20' }]}>
+                <IconSymbol name="cpu" size={24} color={getCategoryColor(tool.category)} />
               </View>
-              
-              <View style={styles.toolMeta}>
-                <View style={[styles.toolCategory, { backgroundColor: getCategoryColor(tool.category) + '15' }]}>
-                  <ThemedText style={[styles.toolCategoryText, { color: getCategoryColor(tool.category) }]}>
-                    {tool.category}
-                  </ThemedText>
-                </View>
-                {toolGoals.length > 0 && (
-                  <View style={styles.goalBadges}>
-                    {toolGoals.slice(0, 2).map(goalId => {
-                      const goalInfo = goalFilters.find(g => g.id === goalId);
-                      return goalInfo ? (
-                        <View
-                          key={goalId}
-                          style={[styles.goalBadge, { backgroundColor: goalInfo.color + '20' }]}
-                        >
-                          <View style={[styles.goalBadgeDot, { backgroundColor: goalInfo.color }]} />
-                        </View>
-                      ) : null;
-                    })}
-                  </View>
-                )}
+              <View style={styles.toolInfo}>
+                <ThemedText style={[styles.toolName, { color: colors.text }]}>{tool.name}</ThemedText>
+                <ThemedText style={[styles.toolDescription, { color: colors.textSecondary }]} numberOfLines={2}>
+                  {tool.description}
+                </ThemedText>
               </View>
-            </TouchableOpacity>
-          );
-        })}
+              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+            </View>
+            
+            <View style={styles.toolMeta}>
+              <View style={[styles.toolCategory, { backgroundColor: getCategoryColor(tool.category) + '15' }]}>
+                <ThemedText style={[styles.toolCategoryText, { color: getCategoryColor(tool.category) }]}>
+                  {tool.category}
+                </ThemedText>
+              </View>
+              {tool.recommendedGoals.length > 0 && (
+                <View style={styles.goalBadges}>
+                  {tool.recommendedGoals.slice(0, 3).map(goalId => {
+                    const goalInfo = goalFilters.find(g => g.id === goalId);
+                    return goalInfo ? (
+                      <View
+                        key={goalId}
+                        style={[styles.goalBadge, { backgroundColor: goalInfo.color + '20' }]}
+                      >
+                        <View style={[styles.goalBadgeDot, { backgroundColor: goalInfo.color }]} />
+                      </View>
+                    ) : null;
+                  })}
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        ))}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
