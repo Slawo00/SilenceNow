@@ -3,6 +3,8 @@ export interface AITool {
   description: string;
   category: string;
   link?: string;
+  logo?: string;
+  url?: string;
 }
 
 export interface Lever {
@@ -14,6 +16,13 @@ export interface Lever {
   aiTools: AITool[];
   effort: 'low' | 'medium' | 'high';
   impact: 'low' | 'medium' | 'high';
+  priority?: 'high' | 'medium' | 'low';
+  responsibleRoles?: string[];
+  keyKPIs?: string[];
+  challengesRisks?: string[];
+  practicalExamples?: string[];
+  technologyRequirements?: string[];
+  changeManagement?: string[];
 }
 
 export interface Goal {

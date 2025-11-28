@@ -8,7 +8,9 @@
 - 4 Optimization Goals
 - 40 Strategic Levers (10 per goal)
 - Detailed implementation guides per lever
-- AI Tool recommendations
+- AI Tool recommendations with detail screens
+- Personal optimization plan (My Plan)
+- Onboarding flow for personalized experience
 
 ### Corporate Identity
 - **Logo**: Custom ΣFinanceAI logo image (assets/images/logo.png) with Sigma symbol, network graphic, and branding
@@ -21,16 +23,29 @@
 ```
 app/
 ├── (tabs)/
-│   ├── _layout.tsx    # Tab Navigation (Home, Goals, AI Tools)
-│   ├── index.tsx      # Dashboard Screen
+│   ├── _layout.tsx    # Tab Navigation (Home, Goals, Plan, AI Tools)
+│   ├── index.tsx      # Home Screen with value proposition
 │   ├── goals.tsx      # Goals Overview
-│   └── tools.tsx      # AI Tools with Search
+│   ├── plan.tsx       # My Plan - personal optimization roadmap
+│   └── tools.tsx      # AI Tools with goal-based filtering
 ├── goal/
 │   └── [id].tsx       # Goal Detail Screen with 10 Levers
 ├── lever/
-│   └── [id].tsx       # Lever Detail Screen with Implementation Guide
-├── _layout.tsx        # Root Layout
+│   └── [id].tsx       # Lever Detail Screen with comprehensive guide
+├── tool/
+│   └── [id].tsx       # AI Tool Detail Screen
+├── onboarding/
+│   └── index.tsx      # Onboarding Flow (3 steps)
+├── _layout.tsx        # Root Layout with Providers
 └── +not-found.tsx     # 404 Screen
+
+context/
+├── OnboardingContext.tsx  # Onboarding state management
+└── PlanContext.tsx        # My Plan state management
+
+services/
+├── storage.ts             # AsyncStorage utilities
+└── supabaseClient.ts      # Supabase placeholder (future)
 
 components/             # Reusable UI Components
 ├── ui/                # UI Base Components (Icons, TabBar)
@@ -52,8 +67,9 @@ hooks/
 
 - **Framework**: React Native with Expo
 - **Navigation**: Expo Router (file-based routing)
+- **Storage**: AsyncStorage for local persistence
 - **Styling**: React Native StyleSheet
-- **Theming**: Light/Dark Mode Support
+- **Theming**: Dark mode with custom color palette
 - **Platforms**: iOS, Android, Web
 
 ## Development
@@ -83,8 +99,53 @@ Each goal has 10 strategic levers with:
 - Benefits
 - 2 recommended AI Tools
 - Effort/Impact assessment (Low/Moderate/High)
+- Priority level (1-3)
+- Responsible roles
+- KPIs to measure success
+- Common challenges
+- Real-world examples
+- Tech requirements
+- Change management considerations
+
+### AI Tools
+Each tool includes:
+- Name, logo, and description
+- Category classification
+- Related goals
+- Key features and benefits
+- Website URL
+
+## Features
+
+### Onboarding Flow
+3-step personalized onboarding:
+1. Welcome screen with value proposition
+2. Feature highlights (Goals, Levers, Plan)
+3. Primary goal selection
+
+### My Plan
+Personal optimization roadmap:
+- Add levers from goal detail screens
+- Track status (Planned, In Progress, Done)
+- View by goal grouping
+- Persist across sessions with AsyncStorage
+
+### Home Screen
+- Value proposition section
+- CTA button to start optimization
+- "How it Works" feature cards
 
 ## Recent Changes
+
+- **28.11.2025**: Enhanced features and GitHub readiness
+  - Added comprehensive onboarding flow with 3 steps
+  - Created My Plan tab with status tracking
+  - Enhanced Home screen with value proposition and How it Works section
+  - Extended Lever detail page with priority, roles, KPIs, challenges, examples, tech requirements, and change management
+  - Added AI Tool detail screen with related levers
+  - Added goal-based filtering for AI Tools
+  - Created Supabase placeholder for future backend integration
+  - Updated .gitignore and README.md for GitHub integration
 
 - **27.11.2025**: Complete UI redesign matching website style
   - Dark navy background (#0F172A) on all screens

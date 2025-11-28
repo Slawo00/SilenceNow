@@ -1,0 +1,195 @@
+You are an expert React Native, Expo, TypeScript and UX developer.  
+I already have a working Expo app called "SigmaFinanceAI".  
+The app is running and has existing modules:
+
+- Home  
+- Goals  
+- Strategic Levers (10 per goal)  
+- Lever Detail Screen (as shown in my screenshots)  
+- AI Tools list with filtering  
+- Navigation already set up  
+- Existing dark theme  
+- Built with Expo + running in Expo Go via Replit  
+
+IMPORTANT:  
+Do NOT rebuild the app.  
+Do NOT delete or replace existing components.  
+Only EXTEND and IMPROVE the existing codebase in a non-destructive way.
+
+=====================================================================
+1. IMPROVE THE HOME SCREEN (EXTEND CURRENT VERSION, DO NOT REPLACE)
+=====================================================================
+Enhance the existing Home screen so it clearly explains the value for CFOs.  
+
+Add:
+- A clear headline like “Transforming Finance with AI & Automation”  
+- 3–4 short value bullets (“Reduce month-end close time”, “Improve accuracy”, “Leverage AI tools”, “Build your optimization roadmap”)  
+- A CTA button “Get Started” which:
+  - If onboarding is NOT completed → start onboarding  
+  - If onboarding IS completed → navigate to the Goals tab  
+- A simple “How it works” section with 3 steps
+
+Keep existing styling and layout — only enhance it.
+
+===========================================================
+2. ADD LIGHTWEIGHT ONBOARDING FLOW (NON-DESTRUCTIVE ADDITION)
+===========================================================
+Create a simple onboarding flow that shows ONLY if no flag in AsyncStorage is set.
+
+Onboarding asks:
+1) Primary optimization goal (Speed, Quality, Automation, Compliance)  
+2) Company size (Small, Mid-size, Large)  
+3) Current month-end close duration in days  
+
+Store onboarding results in AsyncStorage.  
+After completion → navigate user to Goals tab.  
+Show a banner like:  
+“Recommended starting goal: <selected goal>”.
+
+Do not modify existing screens except adding small UI where necessary.
+
+==========================================================
+3. GOALS → EXTEND EXISTING DETAILS (DO NOT RESTRUCTURE)
+==========================================================
+Keep the Goals overview screen unchanged.  
+On tap of a goal → open GoalDetailScreen.  
+
+In GoalDetailScreen add:
+- A button “View all 10 Strategic Levers”
+- This navigates to existing levers list (do NOT rebuild existing components)
+
+==============================================================
+4. EXTEND LEVER DETAIL PAGE (MATCH SCREENSHOTS EXACTLY)
+==============================================================
+The lever detail page MUST include the following sections in this order:
+
+1. Priority badge (“High Priority”, etc.)  
+2. Effort/Benefit badge (“Moderate effort, high benefit”)  
+3. Description  
+4. Responsible Roles  
+5. Key KPIs  
+6. Challenges & Risks  
+7. Practical Examples  
+8. Technology Requirements  
+9. Change Management  
+10. AI Tools (as small chips/buttons)
+
+Keep the existing design style — only add missing sections.
+
+===================================================================
+5. ADD "MY PLAN" TAB (ONLY EXTEND NAVIGATION, NO DESTRUCTIVE CHANGES)
+===================================================================
+Add a new bottom tab “My Plan”.
+
+Create a global state using React Context called MyPlanContext:
+Each saved lever has:
+- goalId  
+- goalTitle  
+- leverId  
+- leverTitle  
+- impact  
+- complexity  
+- status (“Planned”, “In progress”, “Done”)  
+
+In GoalDetailScreen add button: “Add All Levers to My Plan”.
+
+In My Plan tab:
+- Group levers by goal  
+- Allow status change  
+- Persist via AsyncStorage  
+
+=====================================================================
+6. IMPROVE AI TOOLS MODULE (ADD LOGOS + URLS, ONLY EXTEND, DO NOT REWRITE)
+=====================================================================
+Enhance the existing AI Tools feature as follows:
+
+A. **Extend Tool Data Model**  
+Each tool should now include the following fields (extend existing structure):
+
+id: string
+name: string
+description: string
+category: string
+recommendedGoals: string[]
+logo: string | require(…)   // use local assets
+url: string                    // official w
+
+B. **Tool Logos**  
+- Add logos stored in `/assets/logos/`  
+- Prefer square icons (PNG)  
+- On the list screen, show each tool with:
+  - Tool logo (left)
+  - Tool name (bold)
+  - Category (small)
+- On ToolDetailScreen show a larger logo at top.
+
+C. **Tool URLs**  
+- On ToolDetailScreen add a button:
+  “Open Website”
+- Use `Linking.openURL(tool.url)`  
+- Add small external-link icon if possible.
+
+D. **Enhanced Filtering**  
+Keep existing filters, add goal-based filter chips:
+- Speed
+- Quality & Accuracy
+- Automation
+- Compliance & Governance
+
+If a filter is active → show only tools whose `recommendedGoals` include that goal.
+
+=======================================================================
+7. GITHUB INTEGRATION (DO NOT MODIFY APP BEHAVIOR, ONLY ADD FILES)
+=======================================================================
+Add:
+
+A. `.gitignore` for Expo/React Native including:
+- node_modules/
+- .expo/
+- .expo-shared/
+- dist/
+- build/
+- .DS_Store  
+(and all typical RN ignores)
+
+B. Update README.md with:
+- How to run the app (`npm install`, `expo start`)
+- How to connect Replit to GitHub
+- How to push commits from Replit
+- Short explanation of folder structure
+
+Do NOT rewrite existing README if present — just extend it.
+
+=======================================================================
+8. SUPABASE READINESS (OPTIONAL, NON-ACTIVE)
+=======================================================================
+Add a file `/services/supabaseClient.ts`:
+
+- Export a placeholder Supabase client (commented out)
+- Add comments describing where to later add:
+  - Auth
+  - User profile table
+  - User plan synchronization
+
+Do NOT integrate Supabase today.  
+Do NOT break existing local mock-data functionality.
+
+=======================================================================
+9. OUTPUT FORMAT
+=======================================================================
+Provide:
+
+- Full code for all new screens/components  
+- Changed lines ONLY for existing files (do NOT rewrite entire files)  
+- Updated navigation with new tabs/screens  
+- MyPlanContext code  
+- Onboarding screens  
+- Updated Home screen  
+- Updated ToolDetail and AI Tools screen with logos + URLs  
+- README.md and .gitignore  
+- Assets folder structure for tool logos  
+
+IMPORTANT:
+KEEP THE CURRENT APP WORKING.
+ONLY EXTEND IT.  
+DO NOT REMOVE ANY EXISTING FEATURES.

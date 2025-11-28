@@ -1,50 +1,134 @@
-# Welcome to your Expo app 👋
+# SigmaFinanceAI
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An interactive Finance Coaching application for CFOs and finance leaders to optimize their month-end close process.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **4 Optimization Goals**: Speed (Fast Close), Quality & Accuracy, Automation, Compliance & Governance
+- **40 Strategic Levers**: 10 proven strategies per goal with detailed implementation guides
+- **AI Tool Recommendations**: Curated list of finance automation tools with filtering by goal and category
+- **My Plan**: Personal optimization roadmap with status tracking (Planned, In Progress, Done)
+- **Onboarding Flow**: Personalized experience based on your primary goal, company size, and current close duration
+- **Dark Theme**: Modern UI with dark navy background and cyan/teal accents
 
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ installed
+- npm or yarn package manager
+- Expo CLI (optional, for advanced features)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <your-repo-url>
+   cd SigmaFinanceAI
+   ```
+
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. Start the development server:
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+### Running the App
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+After starting the development server, you have several options:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Web**: Press `w` to open in web browser
+- **iOS Simulator**: Press `i` (requires macOS with Xcode)
+- **Android Emulator**: Press `a` (requires Android Studio)
+- **Expo Go**: Scan the QR code with Expo Go app on your device
 
-## Get a fresh project
+### Web-specific Command
 
-When you're ready, run:
-
+To run directly on web with port 5000:
 ```bash
-npm run reset-project
+npx expo start --web --port 5000
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Project Structure
 
-## Learn more
+```
+app/
+├── (tabs)/
+│   ├── _layout.tsx    # Tab Navigation
+│   ├── index.tsx      # Home Screen with value proposition
+│   ├── goals.tsx      # Goals Overview
+│   ├── plan.tsx       # My Plan - personal roadmap
+│   └── tools.tsx      # AI Tools with filtering
+├── goal/
+│   └── [id].tsx       # Goal Detail with levers
+├── lever/
+│   └── [id].tsx       # Lever Detail with implementation guide
+├── tool/
+│   └── [id].tsx       # Tool Detail with related levers
+├── onboarding/
+│   └── index.tsx      # Onboarding Flow
+├── _layout.tsx        # Root Layout with Providers
+└── +not-found.tsx     # 404 Screen
 
-To learn more about developing your project with Expo, look at the following resources:
+context/
+├── OnboardingContext.tsx  # Onboarding state management
+└── PlanContext.tsx        # My Plan state management
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+services/
+├── storage.ts             # AsyncStorage utilities
+└── supabaseClient.ts      # Supabase placeholder (future)
 
-## Join the community
+data/
+└── goals.ts           # Goals, Levers, AI Tools data
 
-Join our community of developers creating universal apps.
+components/            # Reusable UI Components
+constants/             # Colors and theme
+hooks/                 # Custom React hooks
+assets/                # Images and fonts
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## GitHub Integration with Replit
+
+### Connecting to GitHub
+
+1. In Replit, go to **Version Control** in the left sidebar
+2. Click **Connect to GitHub**
+3. Authorize Replit to access your GitHub account
+4. Create a new repository or connect to an existing one
+
+### Pushing Changes
+
+1. Make your changes in the editor
+2. Go to **Version Control**
+3. Stage your changes by clicking the **+** button
+4. Write a commit message
+5. Click **Commit & Push**
+
+### Pulling Changes
+
+1. Go to **Version Control**
+2. Click **Pull** to fetch the latest changes from GitHub
+
+## Technology Stack
+
+- **Framework**: React Native with Expo
+- **Navigation**: Expo Router (file-based routing)
+- **Storage**: AsyncStorage for local persistence
+- **Styling**: React Native StyleSheet
+- **Theming**: Dark mode with custom color palette
+- **Platforms**: iOS, Android, Web
+
+## Future Enhancements
+
+- Supabase integration for cloud sync and authentication
+- Team collaboration features
+- Progress analytics dashboard
+- Push notifications for reminders
+
+## License
+
+MIT License

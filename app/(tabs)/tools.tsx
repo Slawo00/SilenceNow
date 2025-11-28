@@ -1,29 +1,52 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, TextInput, Linking } from 'react-native';
 import { useState, useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
-import { getAllAITools, getToolCategories } from '@/data/goals';
+import { getAllAITools, getToolCategories, goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const goalFilters = [
+  { id: 'speed', name: 'Speed', color: '#00D4AA' },
+  { id: 'quality', name: 'Quality & Accuracy', color: '#10B981' },
+  { id: 'automation', name: 'Automation', color: '#F59E0B' },
+  { id: 'compliance', name: 'Compliance & Governance', color: '#6366F1' },
+];
+
 export default function ToolsScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const router = useRouter();
+  const colors = Colors.dark;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
   const allTools = getAllAITools();
   const categories = getToolCategories();
+
+  const getToolGoals = (toolName: string) => {
+    const toolGoals: string[] = [];
+    goals.forEach(goal => {
+      goal.levers.forEach(lever => {
+        lever.aiTools.forEach(tool => {
+          if (tool.name === toolName && !toolGoals.includes(goal.id)) {
+            toolGoals.push(goal.id);
+          }
+        });
+      });
+    });
+    return toolGoals;
+  };
 
   const filteredTools = useMemo(() => {
     return allTools.filter((tool) => {
       const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tool.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = !selectedCategory || tool.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const matchesGoal = !selectedGoal || getToolGoals(tool.name).includes(selectedGoal);
+      return matchesSearch && matchesCategory && matchesGoal;
     });
-  }, [allTools, searchQuery, selectedCategory]);
+  }, [allTools, searchQuery, selectedCategory, selectedGoal]);
 
   const getCategoryColor = (category: string) => {
     const categoryColors: Record<string, string> = {
@@ -57,14 +80,19 @@ export default function ToolsScreen() {
       'Reporting': '#F59E0B',
       'AI Reporting': '#8B5CF6',
       'Automation': '#6366F1',
+      'AP Automation': '#A855F7',
     };
     return categoryColors[category] || colors.tint;
+  };
+
+  const handleToolPress = (toolName: string) => {
+    router.push(`/tool/${encodeURIComponent(toolName)}`);
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <ThemedText style={styles.title}>AI Tools</ThemedText>
+        <ThemedText style={[styles.title, { color: colors.text }]}>AI Tools</ThemedText>
         <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
           {allTools.length} recommended tools for your month-end close
         </ThemedText>
@@ -86,6 +114,35 @@ export default function ToolsScreen() {
         )}
       </View>
 
+      <View style={styles.filterSection}>
+        <ThemedText style={[styles.filterLabel, { color: colors.textSecondary }]}>Filter by Goal:</ThemedText>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.goalFiltersContainer}
+        >
+          {goalFilters.map((goal) => (
+            <TouchableOpacity
+              key={goal.id}
+              style={[
+                styles.goalChip,
+                {
+                  backgroundColor: selectedGoal === goal.id ? goal.color : colors.card,
+                  borderColor: selectedGoal === goal.id ? goal.color : colors.border,
+                },
+              ]}
+              onPress={() => setSelectedGoal(selectedGoal === goal.id ? null : goal.id)}
+            >
+              <ThemedText
+                style={[styles.goalChipText, { color: selectedGoal === goal.id ? '#fff' : colors.text }]}
+              >
+                {goal.name}
+              </ThemedText>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -100,7 +157,7 @@ export default function ToolsScreen() {
           onPress={() => setSelectedCategory(null)}
         >
           <ThemedText style={[styles.categoryText, { color: !selectedCategory ? '#fff' : colors.text }]}>
-            All
+            All Categories
           </ThemedText>
         </TouchableOpacity>
         {categories.map((category) => (
@@ -129,29 +186,53 @@ export default function ToolsScreen() {
           {filteredTools.length} Tool{filteredTools.length !== 1 ? 's' : ''} found
         </ThemedText>
 
-        {filteredTools.map((tool, index) => (
-          <View
-            key={`${tool.name}-${index}`}
-            style={[styles.toolCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            <View style={styles.toolHeader}>
-              <View style={[styles.toolIcon, { backgroundColor: getCategoryColor(tool.category) + '20' }]}>
-                <IconSymbol name="cpu" size={24} color={getCategoryColor(tool.category)} />
+        {filteredTools.map((tool, index) => {
+          const toolGoals = getToolGoals(tool.name);
+          return (
+            <TouchableOpacity
+              key={`${tool.name}-${index}`}
+              style={[styles.toolCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => handleToolPress(tool.name)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.toolHeader}>
+                <View style={[styles.toolIcon, { backgroundColor: getCategoryColor(tool.category) + '20' }]}>
+                  <IconSymbol name="cpu" size={24} color={getCategoryColor(tool.category)} />
+                </View>
+                <View style={styles.toolInfo}>
+                  <ThemedText style={[styles.toolName, { color: colors.text }]}>{tool.name}</ThemedText>
+                  <ThemedText style={[styles.toolDescription, { color: colors.textSecondary }]}>
+                    {tool.description}
+                  </ThemedText>
+                </View>
+                <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
               </View>
-              <View style={styles.toolInfo}>
-                <ThemedText style={styles.toolName}>{tool.name}</ThemedText>
-                <ThemedText style={[styles.toolDescription, { color: colors.textSecondary }]}>
-                  {tool.description}
-                </ThemedText>
+              
+              <View style={styles.toolMeta}>
+                <View style={[styles.toolCategory, { backgroundColor: getCategoryColor(tool.category) + '15' }]}>
+                  <ThemedText style={[styles.toolCategoryText, { color: getCategoryColor(tool.category) }]}>
+                    {tool.category}
+                  </ThemedText>
+                </View>
+                {toolGoals.length > 0 && (
+                  <View style={styles.goalBadges}>
+                    {toolGoals.slice(0, 2).map(goalId => {
+                      const goalInfo = goalFilters.find(g => g.id === goalId);
+                      return goalInfo ? (
+                        <View
+                          key={goalId}
+                          style={[styles.goalBadge, { backgroundColor: goalInfo.color + '20' }]}
+                        >
+                          <View style={[styles.goalBadgeDot, { backgroundColor: goalInfo.color }]} />
+                        </View>
+                      ) : null;
+                    })}
+                  </View>
+                )}
               </View>
-            </View>
-            <View style={[styles.toolCategory, { backgroundColor: getCategoryColor(tool.category) + '15' }]}>
-              <ThemedText style={[styles.toolCategoryText, { color: getCategoryColor(tool.category) }]}>
-                {tool.category}
-              </ThemedText>
-            </View>
-          </View>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -191,9 +272,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 0,
   },
+  filterSection: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  goalFiltersContainer: {
+    gap: 8,
+  },
+  goalChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  goalChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   categoriesScroll: {
     maxHeight: 50,
-    marginTop: 16,
+    marginTop: 12,
   },
   categoriesContainer: {
     paddingHorizontal: 20,
@@ -201,9 +306,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryChip: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
   },
   categoryText: {
@@ -240,6 +345,7 @@ const styles = StyleSheet.create({
   toolInfo: {
     flex: 1,
     marginLeft: 12,
+    marginRight: 8,
   },
   toolName: {
     fontSize: 16,
@@ -249,16 +355,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
+  toolMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
   toolCategory: {
-    alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 12,
+    borderRadius: 10,
   },
   toolCategoryText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  goalBadges: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  goalBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalBadgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   bottomPadding: {
     height: 100,

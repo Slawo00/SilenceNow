@@ -1,17 +1,17 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { usePlan } from '@/context/PlanContext';
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const colorScheme = useColorScheme() ?? 'light';
   const router = useRouter();
-  const colors = Colors[colorScheme];
+  const colors = Colors.dark;
+  const { addMultipleLevers, isLeverInPlan, plan } = usePlan();
 
   const goal = goals.find((g) => g.id === id);
 
@@ -22,6 +22,9 @@ export default function GoalDetailScreen() {
       </SafeAreaView>
     );
   }
+
+  const leversInPlan = goal.levers.filter(l => isLeverInPlan(l.id)).length;
+  const allInPlan = leversInPlan === goal.levers.length;
 
   const getEffortLabel = (effort: string) => {
     const labels: Record<string, string> = { low: 'Low', medium: 'Moderate', high: 'High' };
@@ -51,13 +54,39 @@ export default function GoalDetailScreen() {
     return impactColors[impact] || colors.textSecondary;
   };
 
+  const handleAddAllToP = async () => {
+    const leversToAdd = goal.levers
+      .filter(l => !isLeverInPlan(l.id))
+      .map(lever => ({
+        goalId: goal.id,
+        goalTitle: goal.title,
+        leverId: lever.id,
+        leverTitle: lever.title,
+        impact: lever.impact,
+        complexity: lever.effort,
+        status: 'Planned' as const,
+      }));
+
+    if (leversToAdd.length === 0) {
+      Alert.alert('Already Added', 'All levers from this goal are already in your plan.');
+      return;
+    }
+
+    await addMultipleLevers(leversToAdd);
+    Alert.alert(
+      'Added to Plan',
+      `${leversToAdd.length} lever${leversToAdd.length > 1 ? 's' : ''} added to your plan.`,
+      [{ text: 'View Plan', onPress: () => router.push('/(tabs)/plan') }, { text: 'OK' }]
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="chevron.left" size={24} color={colors.tint} />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>{goal.title}</ThemedText>
+        <ThemedText style={[styles.headerTitle, { color: colors.text }]}>{goal.title}</ThemedText>
         <View style={styles.backButton} />
       </View>
 
@@ -66,7 +95,7 @@ export default function GoalDetailScreen() {
           <View style={[styles.heroIcon, { backgroundColor: goal.color + '30' }]}>
             <IconSymbol name={goal.icon as any} size={48} color={goal.color} />
           </View>
-          <ThemedText style={styles.heroTitle}>{goal.title}</ThemedText>
+          <ThemedText style={[styles.heroTitle, { color: colors.text }]}>{goal.title}</ThemedText>
           <ThemedText style={[styles.heroDescription, { color: colors.textSecondary }]}>
             {goal.description}
           </ThemedText>
@@ -77,58 +106,95 @@ export default function GoalDetailScreen() {
           </View>
         </View>
 
-        <ThemedText style={styles.sectionTitle}>Strategic Levers</ThemedText>
+        <TouchableOpacity
+          style={[
+            styles.addAllButton,
+            { 
+              backgroundColor: allInPlan ? colors.card : goal.color,
+              borderColor: allInPlan ? colors.border : goal.color,
+            }
+          ]}
+          onPress={handleAddAllToP}
+          disabled={allInPlan}
+          activeOpacity={0.8}
+        >
+          <IconSymbol
+            name={allInPlan ? 'checkmark.circle.fill' : 'checklist'}
+            size={22}
+            color={allInPlan ? colors.success : '#fff'}
+          />
+          <ThemedText style={[
+            styles.addAllButtonText,
+            { color: allInPlan ? colors.success : '#fff' }
+          ]}>
+            {allInPlan ? 'All Levers in Plan' : 'Add All Levers to My Plan'}
+          </ThemedText>
+          {leversInPlan > 0 && !allInPlan && (
+            <View style={[styles.addedBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+              <ThemedText style={styles.addedBadgeText}>{leversInPlan}/{goal.levers.length}</ThemedText>
+            </View>
+          )}
+        </TouchableOpacity>
 
-        {goal.levers.map((lever, index) => (
-          <TouchableOpacity
-            key={lever.id}
-            style={[styles.leverCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push(`/lever/${lever.id}`)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.leverHeader}>
-              <View style={[styles.leverNumber, { backgroundColor: goal.color }]}>
-                <ThemedText style={styles.leverNumberText}>{index + 1}</ThemedText>
+        <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Strategic Levers</ThemedText>
+
+        {goal.levers.map((lever, index) => {
+          const inPlan = isLeverInPlan(lever.id);
+          return (
+            <TouchableOpacity
+              key={lever.id}
+              style={[styles.leverCard, { backgroundColor: colors.card, borderColor: inPlan ? goal.color : colors.border }]}
+              onPress={() => router.push(`/lever/${lever.id}`)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.leverHeader}>
+                <View style={[styles.leverNumber, { backgroundColor: goal.color }]}>
+                  <ThemedText style={styles.leverNumberText}>{index + 1}</ThemedText>
+                </View>
+                <View style={styles.leverInfo}>
+                  <ThemedText style={[styles.leverTitle, { color: colors.text }]}>{lever.title}</ThemedText>
+                  <ThemedText
+                    style={[styles.leverDescription, { color: colors.textSecondary }]}
+                    numberOfLines={2}
+                  >
+                    {lever.shortDescription}
+                  </ThemedText>
+                </View>
+                {inPlan ? (
+                  <IconSymbol name="checkmark.circle.fill" size={24} color={colors.success} />
+                ) : (
+                  <IconSymbol name="chevron.right" size={20} color={colors.icon} />
+                )}
               </View>
-              <View style={styles.leverInfo}>
-                <ThemedText style={styles.leverTitle}>{lever.title}</ThemedText>
-                <ThemedText
-                  style={[styles.leverDescription, { color: colors.textSecondary }]}
-                  numberOfLines={2}
-                >
-                  {lever.shortDescription}
+
+              <View style={styles.leverMeta}>
+                <View style={styles.metaItem}>
+                  <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Effort:</ThemedText>
+                  <View style={[styles.metaBadge, { backgroundColor: getEffortColor(lever.effort) + '20' }]}>
+                    <ThemedText style={[styles.metaValue, { color: getEffortColor(lever.effort) }]}>
+                      {getEffortLabel(lever.effort)}
+                    </ThemedText>
+                  </View>
+                </View>
+                <View style={styles.metaItem}>
+                  <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Impact:</ThemedText>
+                  <View style={[styles.metaBadge, { backgroundColor: getImpactColor(lever.impact) + '20' }]}>
+                    <ThemedText style={[styles.metaValue, { color: getImpactColor(lever.impact) }]}>
+                      {getImpactLabel(lever.impact)}
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.toolsPreview}>
+                <IconSymbol name="cpu" size={14} color={colors.textSecondary} />
+                <ThemedText style={[styles.toolsPreviewText, { color: colors.textSecondary }]}>
+                  {lever.aiTools.length} AI Tools recommended
                 </ThemedText>
               </View>
-              <IconSymbol name="chevron.right" size={20} color={colors.icon} />
-            </View>
-
-            <View style={styles.leverMeta}>
-              <View style={styles.metaItem}>
-                <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Effort:</ThemedText>
-                <View style={[styles.metaBadge, { backgroundColor: getEffortColor(lever.effort) + '20' }]}>
-                  <ThemedText style={[styles.metaValue, { color: getEffortColor(lever.effort) }]}>
-                    {getEffortLabel(lever.effort)}
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={styles.metaItem}>
-                <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Impact:</ThemedText>
-                <View style={[styles.metaBadge, { backgroundColor: getImpactColor(lever.impact) + '20' }]}>
-                  <ThemedText style={[styles.metaValue, { color: getImpactColor(lever.impact) }]}>
-                    {getImpactLabel(lever.impact)}
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.toolsPreview}>
-              <IconSymbol name="cpu" size={14} color={colors.textSecondary} />
-              <ThemedText style={[styles.toolsPreviewText, { color: colors.textSecondary }]}>
-                {lever.aiTools.length} AI Tools recommended
-              </ThemedText>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -191,6 +257,31 @@ const styles = StyleSheet.create({
   leverCountText: {
     color: '#fff',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  addAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+    paddingVertical: 16,
+    borderRadius: 14,
+    gap: 10,
+    borderWidth: 1,
+  },
+  addAllButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  addedBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  addedBadgeText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '600',
   },
   sectionTitle: {

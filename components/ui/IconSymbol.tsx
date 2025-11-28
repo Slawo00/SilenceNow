@@ -39,6 +39,15 @@ const MAPPING = {
   'doc.text.fill': 'description',
   'person.fill': 'person',
   'globe': 'language',
+  'checklist': 'playlist-add-check',
+  'arrow.up.right': 'open-in-new',
+  'exclamationmark.triangle.fill': 'warning',
+  'person.2.fill': 'people',
+  'chart.line.uptrend.xyaxis': 'trending-up',
+  'wrench.fill': 'build',
+  'arrow.triangle.2.circlepath': 'sync',
+  'sparkles': 'auto-awesome',
+  'link': 'link',
 } as IconMapping;
 
 /**
