@@ -44,6 +44,11 @@ export default function GoalDetailScreen() {
     return labels[impact] || impact;
   };
 
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = { high: 'High', medium: 'Medium', low: 'Low' };
+    return labels[priority] || priority;
+  };
+
   const getEffortColor = (effort: string) => {
     const effortColors: Record<string, string> = {
       low: colors.success,
@@ -158,37 +163,29 @@ export default function GoalDetailScreen() {
               onPress={() => router.push(`/lever/${lever.id}`)}
               activeOpacity={0.7}
             >
-              <View style={styles.leverHeader}>
+              <View style={styles.leverRow1}>
                 <View style={[styles.leverNumber, { backgroundColor: goal.color }]}>
                   <ThemedText style={styles.leverNumberText}>{index + 1}</ThemedText>
                 </View>
-                <View style={styles.leverInfo}>
-                  <View style={styles.leverTitleRow}>
-                    <ThemedText style={[styles.leverTitle, { color: colors.text }]}>{lever.title}</ThemedText>
-                  </View>
-                  <ThemedText
-                    style={[styles.leverDescription, { color: colors.textSecondary }]}
-                    numberOfLines={2}
-                  >
-                    {lever.shortDescription}
-                  </ThemedText>
-                </View>
+                <ThemedText style={[styles.leverTitle, { color: colors.text }]} numberOfLines={2}>
+                  {lever.title}
+                </ThemedText>
                 {inPlan ? (
-                  <IconSymbol name="checkmark.circle.fill" size={24} color={colors.success} />
+                  <IconSymbol name="checkmark.circle.fill" size={22} color={colors.success} />
                 ) : (
-                  <IconSymbol name="chevron.right" size={20} color={colors.icon} />
+                  <IconSymbol name="chevron.right" size={18} color={colors.icon} />
                 )}
               </View>
 
-              <View style={styles.badgeRow}>
-                <View style={[styles.priorityBadge, { backgroundColor: priorityColors[priority] + '20' }]}>
-                  <ThemedText style={[styles.priorityText, { color: priorityColors[priority] }]}>
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
-                  </ThemedText>
+              <View style={styles.leverRow2}>
+                <View style={styles.metaItem}>
+                  <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Priority:</ThemedText>
+                  <View style={[styles.metaBadge, { backgroundColor: priorityColors[priority] + '20' }]}>
+                    <ThemedText style={[styles.metaValue, { color: priorityColors[priority] }]}>
+                      {getPriorityLabel(priority)}
+                    </ThemedText>
+                  </View>
                 </View>
-              </View>
-
-              <View style={styles.leverMeta}>
                 <View style={styles.metaItem}>
                   <ThemedText style={[styles.metaLabel, { color: colors.textSecondary }]}>Effort:</ThemedText>
                   <View style={[styles.metaBadge, { backgroundColor: getEffortColor(lever.effort) + '20' }]}>
@@ -205,13 +202,6 @@ export default function GoalDetailScreen() {
                     </ThemedText>
                   </View>
                 </View>
-              </View>
-
-              <View style={styles.toolsPreview}>
-                <IconSymbol name="cpu" size={14} color={colors.textSecondary} />
-                <ThemedText style={[styles.toolsPreviewText, { color: colors.textSecondary }]}>
-                  {lever.aiTools.length} AI Tool{lever.aiTools.length !== 1 ? 's' : ''} recommended
-                </ThemedText>
               </View>
             </TouchableOpacity>
           );
@@ -297,73 +287,48 @@ const styles = StyleSheet.create({
   },
   leverCard: {
     marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 16,
+    marginBottom: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
-  leverHeader: {
+  leverRow1: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: 10,
   },
   leverNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   leverNumberText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
-  leverInfo: {
-    flex: 1,
-    marginLeft: 12,
-    marginRight: 8,
-  },
-  leverTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   leverTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     flex: 1,
   },
-  leverDescription: {
-    fontSize: 13,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  badgeRow: {
+  leverRow2: {
     flexDirection: 'row',
-    marginTop: 12,
-    gap: 8,
-  },
-  priorityBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  priorityText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  leverMeta: {
-    flexDirection: 'row',
-    marginTop: 12,
-    gap: 16,
+    marginTop: 10,
+    marginLeft: 38,
+    gap: 12,
+    flexWrap: 'wrap',
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   metaLabel: {
-    fontSize: 12,
+    fontSize: 11,
   },
   metaBadge: {
     paddingHorizontal: 8,
@@ -371,17 +336,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   metaValue: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-  },
-  toolsPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 6,
-  },
-  toolsPreviewText: {
-    fontSize: 12,
   },
   bottomPadding: {
     height: 40,
