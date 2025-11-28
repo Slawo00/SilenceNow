@@ -63,7 +63,8 @@ constants/
 └── Colors.ts          # Color Palette (Light/Dark Mode)
 
 data/
-└── goals.ts           # Data structure for Goals, Levers, AI Tools
+├── goals.ts           # Data structure for Goals, Levers
+└── aiTools.ts         # Expanded AI Tools catalog (91 tools, 31 categories)
 
 hooks/
 ├── useColorScheme.ts  # System Color Scheme Hook
@@ -114,13 +115,13 @@ Each goal has 10 strategic levers with:
 - Tech requirements
 - Change management considerations
 
-### AI Tools
-Each tool includes:
-- Name, logo, and description
-- Category classification
-- Related goals
-- Key features and benefits
-- Website URL
+### AI Tools (91 Tools, 31 Categories)
+Each tool in the expanded catalog includes:
+- Unique ID, name, and description
+- Category classification (Analytics, AI Finance, AP Automation, AR, Audit, BI, Close Management, Compliance, CPM, Data Management, ERP, Expense Management, FP&A, FP&A & Modeling, GRC, IC Management, IDP, Integration, NLG, P2P, Process Intelligence, Reconciliation, Reporting, Risk, RPA, Security, Tax, Treasury, Workflow, Accounting Automation, AI Reporting, AI/ML, Data Provider)
+- Website URL for direct access
+- Key features array (5 specific features per tool)
+- Recommended goals mapping (speed, quality, automation, compliance)
 
 ## Features
 
@@ -166,6 +167,14 @@ Color-coded priority indicators on lever cards:
 - Quick access to all goals
 
 ## Recent Changes
+
+- **28.11.2025**: Expanded AI Tools catalog to 91 tools
+  - Created comprehensive aiTools.ts data file with extended tool metadata
+  - Added new categories: Expense Management (7 tools), FP&A & Modeling (3 tools), Accounting Automation (5 tools)
+  - Each tool now has: id, name, url, description, keyFeatures[], recommendedGoals[]
+  - Updated AI Tools screen to use expanded catalog with goal-based filtering
+  - Enhanced tool detail pages with "Open Website" button and key features section
+  - Tool cards display recommended goals and category-based icons
 
 - **28.11.2025**: Compact lever card design and section ordering
   - Updated lever cards in Goal detail screen to compact 2-row CFO-optimized design
