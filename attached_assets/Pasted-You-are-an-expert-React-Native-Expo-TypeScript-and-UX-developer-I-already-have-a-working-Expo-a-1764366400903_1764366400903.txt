@@ -1,0 +1,1268 @@
+You are an expert React Native, Expo, TypeScript and UX developer.  
+I already have a working Expo app called "SigmaFinanceAI".  
+The app is running and has existing modules:
+
+- Home  
+- Goals  
+- Strategic Levers  
+- Lever Detail Screen  
+- AI Tools list  
+- Existing navigation  
+- Dark theme  
+- Expo Go + Replit  
+
+IMPORTANT:  
+Do NOT rebuild the app.  
+Do NOT delete existing files.  
+Only EXTEND the existing codebase.
+
+=====================================================================
+0. GLOBAL DESIGN REQUIREMENTS
+=====================================================================
+A) Add the top header (including logo on the left and hamburger icon on the right)  
+→ to ALL screens across the entire app.
+
+B) The hamburger icon opens a RIGHT-SIDE slide-in drawer.  
+This drawer must contain these menu items:
+
+- Home  
+- Goals  
+- My Plan  
+- AI Tools  
+- How it works  
+- Data & Privacy  
+- Contact / Feedback  
+- Terms & Conditions  
+- Onboarding  
+
+Drawer style:
+- Slide in from right  
+- Dark theme  
+- Full-height drawer  
+- Use React Navigation Drawer, but configured for right-hand drawer  
+
+=====================================================================
+1. HOME SCREEN — EXTEND EXISTING VERSION (NO REPLACEMENT)
+=====================================================================
+Enhance the existing Home screen:
+
+- Add headline: “Transforming Finance with AI & Automation”
+- Add 4 value bullets:
+  - Reduce your month-end close time
+  - Increase accuracy & data quality
+  - Leverage AI for reconciliation, reporting & forecasting
+  - Build a personalized CFO optimization roadmap
+- Add CTA button “Get Started”
+  - If onboarding incomplete → start onboarding
+  - If onboarding done → navigate to Goals
+- Add “How it works” section (3 steps)
+
+Keep existing layout; only extend.
+
+=====================================================================
+2. LIGHTWEIGHT ONBOARDING FLOW (ADDITIVE)
+=====================================================================
+Onboarding fields:
+
+1) Primary optimization goal  
+2) Company size  
+3) Current close duration in days  
+
+Store results in AsyncStorage.  
+After finishing → navigate to Goals.  
+Show banner: “Recommended starting goal: <goal>”.
+
+=====================================================================
+3. GOALS SCREEN — KEEP, BUT EXTEND
+=====================================================================
+Keep current layout.
+
+Extend Goal Detail screen with:
+- “View all 10 levers”
+- Navigation to existing lever list
+- Buttons that add all levers to My Plan
+
+=====================================================================
+4. LEVER OVERVIEW — VARIANTE B DESIGN (NEW REQUIREMENT)
+=====================================================================
+Update each Lever Card to a **2-line compact layout**:
+
+**Line 1:**  
+[Lever Title]
+
+**Line 2:**  
+Priority: [High]  Effort: [Moderate]  Impact: [High]
+
+All three attributes shall be consistently displayed in this exact structured format.
+
+Badges should match dark theme styling.
+
+=====================================================================
+5. LEVER DETAIL SCREEN — EXTEND TO MATCH FULL STRUCTURE
+=====================================================================
+The lever detail screen MUST include:
+
+1. Priority  
+2. Effort / Impact  
+3. Description  
+4. Responsible Roles  
+5. Key KPIs  
+6. Challenges & Risks  
+7. Practical Examples  
+8. Technology Requirements  
+9. Change Management  
+10. AI Tools (chips)
+
+NEW REQUIREMENTS:
+- When a user taps on an AI Tool chip → open corresponding Tool Detail screen.
+- A lever can contain ANY number of tools, not only two.
+
+=====================================================================
+6. NEW AI TOOL LIST (EXPANDED TOOL CATALOG)
+=====================================================================
+Replace the existing tool mock-data with the **full expanded list** from the message I provided.
+
+Each tool must have:
+
+id
+category
+name
+descriptionShort
+recommendedGoals (array)
+logo (local asset)
+url (official website)
+keyFeatures (list)
+
+Add local square logo in `/assets/logos/<tool>.png`.
+
+=====================================================================
+7. TOOL DETAIL SCREEN — EXTENDED VERSION
+=====================================================================
+The Tool Detail screen must include:
+
+- Tool logo (large)  
+- Tool name  
+- Category  
+- Short description  
+- Key features  
+- Recommended goals (badges)  
+- CTA button “Open Website” → Linking.openURL(url)  
+
+=====================================================================
+8. TOOL → LEVER → GOAL INTEGRATION
+=====================================================================
+You must:
+
+A) Assign relevant tools to each GOAL (Speed, Quality, Automation, Compliance).  
+B) Assign the MOST relevant tools to each LEVER.  
+
+You can derive relevance from:
+
+- Tool category  
+- Finance function (FP&A, AR, AP, Close Management, RPA, IDP, etc.)  
+- Process automation potential  
+
+C) Key Features:  
+For every tool, fill `keyFeatures` with 3–6 concrete features based on real capabilities.
+
+=====================================================================
+9. MY PLAN TAB (NO REPLACEMENT)
+=====================================================================
+Add bottom tab “My Plan”.
+
+Features:
+
+- List all saved levers  
+- Group by goal  
+- Change status (Planned → In Progress → Done)  
+- Persist with AsyncStorage  
+
+Use React Context for MyPlanContext.
+
+=====================================================================
+10. HAMBURGER MENU (TOP RIGHT) + RIGHT DRAWER
+=====================================================================
+Require changes:
+
+- Add global header to all screens  
+- Left: logo  
+- Right: hamburger icon  
+- On press → open right-hand drawer  
+- Drawer contains menu items listed above  
+
+=====================================================================
+11. LOGO INCONSISTENCY FIX
+=====================================================================
+Ensure the top-left logo is visible on ALL main screens:
+- Home  
+- Goals  
+- Lever list  
+- Lever detail  
+- My Plan  
+- AI Tools  
+- Tool detail  
+- How it works  
+- Contact / Feedback  
+- Terms  
+- Data & Privacy  
+- Onboarding  
+
+=====================================================================
+12. README + GITIGNORE + GITHUB INTEGRATION
+=====================================================================
+Extend the existing README with:
+
+- How to install (`npm install`)  
+- How to run (`expo start`)  
+- How to connect Replit to GitHub  
+- How to push changes  
+
+Add `.gitignore` suitable for Expo/React Native:
+
+- node_modules/  
+- .expo/  
+- .expo-shared/  
+- build/  
+- dist/  
+- .DS_Store  
+
+=====================================================================
+13. SUPABASE STUB (NO FUNCTIONALITY YET)
+=====================================================================
+Add `/services/supabaseClient.ts` with commented-out initialization code.
+
+=====================================================================
+14. OUTPUT REQUIREMENTS
+=====================================================================
+You MUST produce:
+
+- Updated code for all changed files (not full rewrites)
+- New components (Drawer, ToolDetail, Onboarding screens, MyPlanContext)
+- Updated navigation to include:
+  - Global header
+  - Hamburger icon
+  - Right drawer
+  - My Plan tab
+- Updated Lever Card (2-line compact format)
+- Tool list with expanded catalog
+- README + .gitignore
+
+IMPORTANT:
+Do NOT break existing app.
+Only extend and improve.
+
+Untenstehend alle AI - Tools:
+
+
+[
+  {
+    "category": "Analytics",
+    "tools": [
+      {
+        "id": "sap_analytics_cloud",
+        "name": "SAP Analytics Cloud",
+        "logo": "sap_analytics_cloud.png",
+        "url": "https://www.sap.com/products/analytics-cloud.html",
+        "description": "Variance analysis and advanced finance analytics.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+  {
+    "category": "AI Finance",
+    "tools": [
+      {
+        "id": "appzen",
+        "name": "AppZen",
+        "logo": "appzen.png",
+        "url": "https://www.appzen.com",
+        "description": "AI-powered invoice assignment and intelligent booking.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "highradius",
+        "name": "HighRadius",
+        "logo": "highradius.png",
+        "url": "https://www.highradius.com",
+        "description": "AI anomaly detection and AR automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+  {
+    "category": "AI Reporting",
+    "tools": [
+      {
+        "id": "narrative_science",
+        "name": "Narrative Science",
+        "logo": "narrative_science.png",
+        "url": "https://narrativescience.com",
+        "description": "Automated natural-language narratives.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+  {
+    "category": "AI/ML",
+    "tools": [
+      {
+        "id": "datarobot",
+        "name": "DataRobot",
+        "logo": "datarobot.png",
+        "url": "https://www.datarobot.com",
+        "description": "Enterprise AutoML platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+  {
+    "category": "AP Automation",
+    "tools": [
+      {
+        "id": "vic_ai",
+        "name": "Vic.ai",
+        "logo": "vic_ai.png",
+        "url": "https://www.vic.ai",
+        "description": "AI-powered invoice coding.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "routable",
+        "name": "Routable",
+        "logo": "routable.png",
+        "url": "https://www.routable.com",
+        "description": "AP workflows and payments automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+  {
+    "category": "AR (Accounts Receivable)",
+    "tools": [
+      {
+        "id": "esker",
+        "name": "Esker",
+        "logo": "esker.png",
+        "url": "https://www.esker.com",
+        "description": "AR automation platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "highradius_collections",
+        "name": "HighRadius Collections",
+        "logo": "highradius_collections.png",
+        "url": "https://www.highradius.com/collections",
+        "description": "AI-based collections and AR optimization.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "glean_ai",
+        "name": "Glean.ai",
+        "logo": "glean_ai.png",
+        "url": "https://www.glean.ai",
+        "description": "Collections analytics and AR optimization.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "nanonets_ar",
+        "name": "Nanonets AR",
+        "logo": "nanonets_ar.png",
+        "url": "https://nanonets.com",
+        "description": "Document-based AR and cash application automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+  {
+    "category": "Audit",
+    "tools": [
+      {
+        "id": "audit_board",
+        "name": "AuditBoard",
+        "logo": "audit_board.png",
+        "url": "https://www.auditboard.com",
+        "description": "Audit and risk management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "mindbridge",
+        "name": "MindBridge",
+        "logo": "mindbridge.png",
+        "url": "https://www.mindbridge.ai",
+        "description": "AI audit platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "datasnipper",
+        "name": "DataSnipper",
+        "logo": "datasnipper.png",
+        "url": "https://datasnipper.com",
+        "description": "AI audit evidence extraction and testing.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "trullion",
+        "name": "Trullion",
+        "logo": "trullion.png",
+        "url": "https://www.trullion.com",
+        "description": "AI lease accounting and audit automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "BI",
+    "tools": [
+      {
+        "id": "power_bi",
+        "name": "Power BI",
+        "logo": "power_bi.png",
+        "url": "https://powerbi.microsoft.com",
+        "description": "Business intelligence and KPI dashboards.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "power_bi_copilot",
+        "name": "Power BI Copilot",
+        "logo": "power_bi_copilot.png",
+        "url": "https://powerbi.microsoft.com/copilot",
+        "description": "Natural-language BI insights.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "tableau",
+        "name": "Tableau",
+        "logo": "tableau.png",
+        "url": "https://www.tableau.com",
+        "description": "Data visualization for finance processes.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "thoughtspot",
+        "name": "ThoughtSpot",
+        "logo": "thoughtspot.png",
+        "url": "https://www.thoughtspot.com",
+        "description": "Search and AI analytics.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Close Management",
+    "tools": [
+      {
+        "id": "blackline",
+        "name": "BlackLine",
+        "logo": "blackline.png",
+        "url": "https://www.blackline.com",
+        "description": "Task, accrual and reconciliation management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "floqast",
+        "name": "FloQast",
+        "logo": "floqast.png",
+        "url": "https://floqast.com",
+        "description": "Close management and continuous accounting.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "trintech",
+        "name": "Trintech",
+        "logo": "trintech.png",
+        "url": "https://www.trintech.com",
+        "description": "Financial process automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "cadency",
+        "name": "Trintech Cadency",
+        "logo": "cadency.png",
+        "url": "https://www.trintech.com/cadency",
+        "description": "Accrual and close automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Compliance",
+    "tools": [
+      {
+        "id": "workiva",
+        "name": "Workiva",
+        "logo": "workiva.png",
+        "url": "https://www.workiva.com",
+        "description": "Internal controls and reporting automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "CPM",
+    "tools": [
+      {
+        "id": "tagetik",
+        "name": "CCH Tagetik",
+        "logo": "tagetik.png",
+        "url": "https://www.wolterskluwer.com/en/solutions/cch-tagetik",
+        "description": "Unified performance management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "onestream",
+        "name": "OneStream",
+        "logo": "onestream.png",
+        "url": "https://www.onestream.com",
+        "description": "Finance platform for consolidation & planning.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "oracle_epm",
+        "name": "Oracle EPM",
+        "logo": "oracle_epm.png",
+        "url": "https://www.oracle.com/performance-management",
+        "description": "Enterprise performance management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "sap_bpc",
+        "name": "SAP BPC",
+        "logo": "sap_bpc.png",
+        "url": "https://www.sap.com/products/bpc.html",
+        "description": "Business planning and consolidation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Data Management",
+    "tools": [
+      {
+        "id": "informatica",
+        "name": "Informatica",
+        "logo": "informatica.png",
+        "url": "https://www.informatica.com",
+        "description": "Data governance and ETL.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "talend",
+        "name": "Talend",
+        "logo": "talend.png",
+        "url": "https://www.talend.com",
+        "description": "Data quality and integration.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Data Provider",
+    "tools": [
+      {
+        "id": "bloomberg",
+        "name": "Bloomberg Terminal",
+        "logo": "bloomberg.png",
+        "url": "https://www.bloomberg.com/professional/solution/bloomberg-terminal",
+        "description": "Financial market data.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "capital_iq",
+        "name": "S&P Capital IQ",
+        "logo": "capital_iq.png",
+        "url": "https://www.spglobal.com/marketintelligence",
+        "description": "Market and company intelligence.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "ERP",
+    "tools": [
+      {
+        "id": "oracle_financials",
+        "name": "Oracle Financials",
+        "logo": "oracle_financials.png",
+        "url": "https://www.oracle.com/erp",
+        "description": "Automated journal entries and finance workflows.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "oracle_fixed_assets",
+        "name": "Oracle Fixed Assets",
+        "logo": "oracle_fixed_assets.png",
+        "url": "https://www.oracle.com/erp/fixed-assets",
+        "description": "Fixed asset lifecycle management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "sap_asset_management",
+        "name": "SAP Asset Management",
+        "logo": "sap_asset_management.png",
+        "url": "https://www.sap.com/products/enterprise-asset-management.html",
+        "description": "Fixed asset accounting in SAP.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "sap_s4hana",
+        "name": "SAP S/4HANA",
+        "logo": "sap_s4hana.png",
+        "url": "https://www.sap.com/products/s4hana",
+        "description": "Integrated finance automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Expense Management",
+    "tools": [
+      {
+        "id": "expensify",
+        "name": "Expensify",
+        "logo": "expensify.png",
+        "url": "https://www.expensify.com",
+        "description": "Expense reporting and policy enforcement.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "emburse",
+        "name": "Emburse",
+        "logo": "emburse.png",
+        "url": "https://www.emburse.com",
+        "description": "Corporate spend and travel management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "divvy",
+        "name": "Divvy",
+        "logo": "divvy.png",
+        "url": "https://getdivvy.com",
+        "description": "Spend management and virtual cards.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "zoho_expense",
+        "name": "Zoho Expense",
+        "logo": "zoho_expense.png",
+        "url": "https://www.zoho.com/expense",
+        "description": "SME-focused expense automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "ramp",
+        "name": "Ramp",
+        "logo": "ramp.png",
+        "url": "https://www.ramp.com",
+        "description": "Corporate cards and spend automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "moss",
+        "name": "Moss",
+        "logo": "moss.png",
+        "url": "https://www.getmoss.com",
+        "description": "Corporate cards & expense control.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "rydoo",
+        "name": "Rydoo",
+        "logo": "rydoo.png",
+        "url": "https://www.rydoo.com",
+        "description": "Travel & expense management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "FP&A",
+    "tools": [
+      {
+        "id": "anaplan",
+        "name": "Anaplan",
+        "logo": "anaplan.png",
+        "url": "https://www.anaplan.com",
+        "description": "Connected planning.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "board",
+        "name": "Board",
+        "logo": "board.png",
+        "url": "https://www.board.com",
+        "description": "Decision-making and planning.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "ibm_planning",
+        "name": "IBM Planning Analytics",
+        "logo": "ibm_planning.png",
+        "url": "https://www.ibm.com/products/planning-analytics",
+        "description": "AI-driven forecasting.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "jedox",
+        "name": "Jedox",
+        "logo": "jedox.png",
+        "url": "https://www.jedox.com",
+        "description": "Driver-based planning and variance analysis.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "prophix",
+        "name": "Prophix",
+        "logo": "prophix.png",
+        "url": "https://www.prophix.com",
+        "description": "Automated budgeting and forecasting.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "workday_adaptive",
+        "name": "Workday Adaptive",
+        "logo": "workday_adaptive.png",
+        "url": "https://www.workday.com",
+        "description": "Enterprise planning & modelling.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "pigment",
+        "name": "Pigment",
+        "logo": "pigment.png",
+        "url": "https://www.pigment.com",
+        "description": "Revenue and cash-flow forecasting.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "jirav",
+        "name": "Jirav",
+        "logo": "jirav.png",
+        "url": "https://www.jirav.com",
+        "description": "Forecasting & FP&A for mid-market.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "FP&A & Modeling",
+    "tools": [
+      {
+        "id": "causal",
+        "name": "Causal",
+        "logo": "causal.png",
+        "url": "https://www.causal.app",
+        "description": "Scenario planning & modelling.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "onplan",
+        "name": "OnPlan",
+        "logo": "onplan.png",
+        "url": "https://www.onplan.co",
+        "description": "Budget vs actuals planning.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "abacum",
+        "name": "Abacum",
+        "logo": "abacum.png",
+        "url": "https://www.abacum.io",
+        "description": "Driver-based FP&A platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "GRC",
+    "tools": [
+      {
+        "id": "sap_access_control",
+        "name": "SAP Access Control",
+        "logo": "sap_access_control.png",
+        "url": "https://www.sap.com/products/access-control",
+        "description": "SoD & controls management.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "sap_grc",
+        "name": "SAP GRC",
+        "logo": "sap_grc.png",
+        "url": "https://www.sap.com/products/grc",
+        "description": "Governance, risk and compliance.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "IC Management",
+    "tools": [
+      {
+        "id": "blackline_ic",
+        "name": "BlackLine IC",
+        "logo": "blackline_ic.png",
+        "url": "https://www.blackline.com/solutions/intercompany",
+        "description": "Intercompany hub.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "IDP",
+    "tools": [
+      {
+        "id": "abbyy",
+        "name": "ABBYY",
+        "logo": "abbyy.png",
+        "url": "https://www.abbyy.com",
+        "description": "Intelligent document processing.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "kofax",
+        "name": "Kofax",
+        "logo": "kofax.png",
+        "url": "https://www.kofax.com",
+        "description": "Document intelligence & automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Integration",
+    "tools": [
+      {
+        "id": "airbyte",
+        "name": "Airbyte",
+        "logo": "airbyte.png",
+        "url": "https://www.airbyte.com",
+        "description": "Open-source ETL.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "fivetran",
+        "name": "Fivetran",
+        "logo": "fivetran.png",
+        "url": "https://www.fivetran.com",
+        "description": "Automated data pipelines.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "NLG",
+    "tools": [
+      {
+        "id": "arria_nlg",
+        "name": "Arria NLG",
+        "logo": "arria_nlg.png",
+        "url": "https://www.arria.com",
+        "description": "Natural Language Generation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "narrative_science_quill",
+        "name": "Narrative Science Quill",
+        "logo": "narrative_science_quill.png",
+        "url": "https://narrativescience.com/quill",
+        "description": "Automated finance narratives.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "P2P",
+    "tools": [
+      {
+        "id": "coupa",
+        "name": "Coupa",
+        "logo": "coupa.png",
+        "url": "https://www.coupa.com",
+        "description": "Procurement & spend automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "sap_ariba",
+        "name": "SAP Ariba",
+        "logo": "sap_ariba.png",
+        "url": "https://www.ariba.com",
+        "description": "Procurement workflows & approvals.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Process Intelligence",
+    "tools": [
+      {
+        "id": "celonis",
+        "name": "Celonis",
+        "logo": "celonis.png",
+        "url": "https://www.celonis.com",
+        "description": "Process mining and automation insights.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "uipath_process_mining",
+        "name": "UiPath Process Mining",
+        "logo": "uipath_process_mining.png",
+        "url": "https://www.uipath.com/platform/process-mining",
+        "description": "Process analysis for finance flows.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Reconciliation",
+    "tools": [
+      {
+        "id": "blackline_recon",
+        "name": "BlackLine Reconciliation",
+        "logo": "blackline_recon.png",
+        "url": "https://www.blackline.com/solutions/reconciliation",
+        "description": "Automated account reconciliation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "blackline_cash_application",
+        "name": "BlackLine Cash Application",
+        "logo": "blackline_cash_application.png",
+        "url": "https://www.blackline.com/solutions/cash-application",
+        "description": "Cash matching automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "reconart",
+        "name": "ReconArt",
+        "logo": "reconart.png",
+        "url": "https://www.reconart.com",
+        "description": "AI-powered matching engine.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Reporting",
+    "tools": [
+      {
+        "id": "workiva_reporting",
+        "name": "Workiva Reporting",
+        "logo": "workiva_reporting.png",
+        "url": "https://www.workiva.com/products/management-reporting",
+        "description": "Reporting and workflow automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Risk",
+    "tools": [
+      {
+        "id": "moodys_analytics",
+        "name": "Moody's Analytics",
+        "logo": "moodys_analytics.png",
+        "url": "https://www.moodysanalytics.com",
+        "description": "Credit risk analytics.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "sas_risk_management",
+        "name": "SAS Risk Management",
+        "logo": "sas_risk_management.png",
+        "url": "https://www.sas.com",
+        "description": "Enterprise risk solutions.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "RPA",
+    "tools": [
+      {
+        "id": "automation_anywhere",
+        "name": "Automation Anywhere",
+        "logo": "automation_anywhere.png",
+        "url": "https://www.automationanywhere.com",
+        "description": "Enterprise intelligent automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "uipath",
+        "name": "UiPath",
+        "logo": "uipath.png",
+        "url": "https://www.uipath.com",
+        "description": "Enterprise RPA platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Security",
+    "tools": [
+      {
+        "id": "sailpoint",
+        "name": "SailPoint",
+        "logo": "sailpoint.png",
+        "url": "https://www.sailpoint.com",
+        "description": "Identity security and governance.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Tax",
+    "tools": [
+      {
+        "id": "thomson_reuters_onesource",
+        "name": "ONESOURCE",
+        "logo": "onesource.png",
+        "url": "https://tax.thomsonreuters.com/products/onesource",
+        "description": "Tax compliance automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "vertex",
+        "name": "Vertex",
+        "logo": "vertex.png",
+        "url": "https://www.vertexinc.com",
+        "description": "Indirect tax technology.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Treasury",
+    "tools": [
+      {
+        "id": "gtreasury",
+        "name": "GTreasury",
+        "logo": "gtreasury.png",
+        "url": "https://www.gtreasury.com",
+        "description": "Cash forecasting and treasury workflows.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "highradius_cash_app",
+        "name": "HighRadius Cash Application",
+        "logo": "highradius_cash_app.png",
+        "url": "https://www.highradius.com/cash-application",
+        "description": "AI cash matching.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "kyriba",
+        "name": "Kyriba",
+        "logo": "kyriba.png",
+        "url": "https://www.kyriba.com",
+        "description": "Treasury management platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Workflow",
+    "tools": [
+      {
+        "id": "power_automate",
+        "name": "Microsoft Power Automate",
+        "logo": "power_automate.png",
+        "url": "https://powerautomate.microsoft.com",
+        "description": "Low-code workflow automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "nintex",
+        "name": "Nintex",
+        "logo": "nintex.png",
+        "url": "https://www.nintex.com",
+        "description": "Workflow and process automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "sap_workflow",
+        "name": "SAP Workflow",
+        "logo": "sap_workflow.png",
+        "url": "https://www.sap.com/products/business-workflow",
+        "description": "Integrated SAP approvals.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "servicenow",
+        "name": "ServiceNow",
+        "logo": "servicenow.png",
+        "url": "https://www.servicenow.com",
+        "description": "Enterprise workflow automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "workiva_workflow",
+        "name": "Workiva Workflow",
+        "logo": "workiva_workflow.png",
+        "url": "https://www.workiva.com",
+        "description": "Workflow orchestration for finance.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  },
+
+  {
+    "category": "Accounting Automation",
+    "tools": [
+      {
+        "id": "numeric",
+        "name": "Numeric",
+        "logo": "numeric.png",
+        "url": "https://www.numeric.com",
+        "description": "AI bookkeeping automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "zeni",
+        "name": "Zeni",
+        "logo": "zeni.png",
+        "url": "https://www.zeni.ai",
+        "description": "AI-based full-service accounting.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "docyt",
+        "name": "Docyt",
+        "logo": "docyt.png",
+        "url": "https://www.docyt.com",
+        "description": "SME accounting automation platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "floqast_ai",
+        "name": "FloQast AI",
+        "logo": "floqast_ai.png",
+        "url": "https://floqast.com/features/ai",
+        "description": "Close management enhanced with AI workflow automation.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      },
+      {
+        "id": "bookkeeping_ai",
+        "name": "Bookkeeping.ai",
+        "logo": "bookkeeping_ai.png",
+        "url": "https://www.bookkeeping.ai",
+        "description": "AI-first bookkeeping platform.",
+        "recommendedGoals": [],
+        "recommendedLevers": []
+      }
+    ]
+  }
+]
