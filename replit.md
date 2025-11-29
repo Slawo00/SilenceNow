@@ -69,6 +69,9 @@ data/
 hooks/
 ├── useColorScheme.ts  # System Color Scheme Hook
 └── useThemeColor.ts   # Theme Colors Hook
+
+utils/
+└── leverScoring.ts    # Personalized lever scoring algorithm
 ```
 
 ## Technology Stack
@@ -167,6 +170,16 @@ Color-coded priority indicators on lever cards:
 - Quick access to all goals
 
 ## Recent Changes
+
+- **29.11.2025**: Personalized Recommendations System
+  - Created utils/leverScoring.ts with intelligent scoring algorithm
+  - Score based on: priority (high=100, medium=50, low=25), impact/effort weighting, company size fit, close duration fit
+  - GoalDetailScreen now sorts levers by personalized score after onboarding
+  - Added "Recommended order based on your situation" banner when personalized
+  - Top 3 levers display badges: "Top Recommendation", "Quick Win", "Recommended"
+  - Onboarding completion navigates directly to selected goal detail screen
+  - Lever data model extended with fit tags: recommendedCompanySizes, recommendedCloseDurationRanges
+  - AI tool chips on lever detail screens are tappable and navigate to tool detail
 
 - **28.11.2025**: Expanded AI Tools catalog to 91 tools
   - Created comprehensive aiTools.ts data file with extended tool metadata
