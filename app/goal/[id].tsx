@@ -3,10 +3,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-import { goals } from '@/data/goals';
+import { goals, Lever } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePlan } from '@/context/PlanContext';
+import { useOnboarding } from '@/context/OnboardingContext';
 import GlobalHeader from '@/components/GlobalHeader';
+import { sortLeversByScore, getRecommendationBadge } from '@/utils/leverScoring';
 
 const priorityColors: Record<string, string> = {
   high: '#EF4444',
@@ -19,8 +21,12 @@ export default function GoalDetailScreen() {
   const router = useRouter();
   const colors = Colors.dark;
   const { addMultipleLevers, isLeverInPlan, plan } = usePlan();
+  const { onboardingData, isOnboardingCompleted } = useOnboarding();
 
   const goal = goals.find((g) => g.id === id);
+  
+  const sortedLevers = goal ? sortLeversByScore(goal.levers, onboardingData) : [];
+  const showPersonalizedOrder = isOnboardingCompleted && onboardingData;
 
   if (!goal) {
     return (
@@ -150,11 +156,22 @@ export default function GoalDetailScreen() {
           )}
         </TouchableOpacity>
 
-        <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Strategic Levers</ThemedText>
+        <View style={styles.sectionHeader}>
+          <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Strategic Levers</ThemedText>
+          {showPersonalizedOrder && (
+            <View style={[styles.personalizedBanner, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '40' }]}>
+              <IconSymbol name="sparkles" size={14} color={colors.tint} />
+              <ThemedText style={[styles.personalizedText, { color: colors.tint }]}>
+                Recommended order based on your situation
+              </ThemedText>
+            </View>
+          )}
+        </View>
 
-        {goal.levers.map((lever, index) => {
+        {sortedLevers.map((lever, index) => {
           const inPlan = isLeverInPlan(lever.id);
           const priority = getPriority(lever);
+          const recommendationBadge = getRecommendationBadge(lever, sortedLevers, onboardingData);
           
           return (
             <TouchableOpacity
@@ -163,6 +180,17 @@ export default function GoalDetailScreen() {
               onPress={() => router.push(`/lever/${lever.id}`)}
               activeOpacity={0.7}
             >
+              {recommendationBadge && (
+                <View style={[
+                  styles.recommendationBadge, 
+                  { 
+                    backgroundColor: index === 0 ? '#8B5CF6' : index === 1 ? colors.tint : '#3B82F6',
+                  }
+                ]}>
+                  <IconSymbol name={index === 0 ? 'star.fill' : 'bolt.fill'} size={10} color="#fff" />
+                  <ThemedText style={styles.recommendationBadgeText}>{recommendationBadge}</ThemedText>
+                </View>
+              )}
               <View style={styles.leverRow1}>
                 <View style={[styles.leverNumber, { backgroundColor: goal.color }]}>
                   <ThemedText style={styles.leverNumberText}>{index + 1}</ThemedText>
@@ -278,12 +306,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+  sectionHeader: {
     paddingHorizontal: 20,
     marginTop: 32,
     marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  personalizedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  personalizedText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   leverCard: {
     marginHorizontal: 20,
@@ -292,6 +336,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
+  },
+  recommendationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  recommendationBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   leverRow1: {
     flexDirection: 'row',

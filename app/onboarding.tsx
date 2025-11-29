@@ -44,7 +44,7 @@ export default function OnboardingScreen() {
         closeDuration,
         completedAt: new Date().toISOString(),
       });
-      router.replace('/(tabs)/goals');
+      router.replace(`/goal/${primaryGoal}`);
     }
   };
 
