@@ -474,6 +474,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'ABBYY', description: 'Intelligent document capture', category: 'IDP' },
           { name: 'Kofax', description: 'Document Intelligence', category: 'IDP' },
+          { name: 'Zoho Expense', description: 'Autoscan receipt capture', category: 'Expense Management' },
         ],
         effort: 'medium',
         impact: 'high',
@@ -531,6 +532,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'SAP Ariba', description: 'Procurement Automation', category: 'P2P' },
           { name: 'Coupa', description: 'BSM Platform', category: 'P2P' },
+          { name: 'Zoho Expense', description: 'Travel & Expense Automation', category: 'Expense Management' },
         ],
         effort: 'high',
         impact: 'high',
@@ -569,6 +571,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'Microsoft Power Automate', description: 'Low-code workflows', category: 'Workflow' },
           { name: 'Nintex', description: 'Process Automation', category: 'Workflow' },
+          { name: 'Zoho Expense', description: 'Multi-level approval workflows', category: 'Expense Management' },
         ],
         effort: 'low',
         impact: 'medium',
@@ -673,6 +676,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'MindBridge', description: 'AI Auditor', category: 'Audit' },
           { name: 'DataRobot', description: 'AutoML Platform', category: 'AI/ML' },
+          { name: 'Zoho Expense', description: 'Expense fraud detection', category: 'Expense Management' },
         ],
         effort: 'medium',
         impact: 'high',
