@@ -293,7 +293,7 @@ export const goals: Goal[] = [
         benefits: ['Complete processes', 'Clear responsibilities', 'Transparent status'],
         aiTools: [
           { name: 'FloQast', description: 'Close Checklists', category: 'Close Management' },
-          { name: 'Blackline', description: 'Task Management', category: 'Close Management' },
+          { name: 'BlackLine', description: 'Task Management', category: 'Close Management' },
         ],
         effort: 'low',
         impact: 'medium',
@@ -312,7 +312,7 @@ export const goals: Goal[] = [
         benefits: ['Audit-ready', 'Traceability', 'Time savings in audits'],
         aiTools: [
           { name: 'Workiva', description: 'Document management', category: 'Compliance' },
-          { name: 'Audit Board', description: 'Audit management', category: 'Audit' },
+          { name: 'AuditBoard', description: 'Audit management', category: 'Audit' },
         ],
         effort: 'medium',
         impact: 'medium',
@@ -550,7 +550,7 @@ export const goals: Goal[] = [
         ],
         benefits: ['No forgotten accruals', 'Consistent methodology', 'Time savings'],
         aiTools: [
-          { name: 'Blackline', description: 'Accrual Management', category: 'Close Management' },
+          { name: 'BlackLine', description: 'Accrual Management', category: 'Close Management' },
           { name: 'Trintech', description: 'Financial Close', category: 'Close Management' },
         ],
         effort: 'medium',
@@ -609,7 +609,7 @@ export const goals: Goal[] = [
         benefits: ['Compliance security', 'Lower tax risks', 'Efficient filing processes'],
         aiTools: [
           { name: 'Vertex', description: 'Tax Technology', category: 'Tax' },
-          { name: 'Thomson Reuters ONESOURCE', description: 'Tax Compliance', category: 'Tax' },
+          { name: 'ONESOURCE', description: 'Tax Compliance', category: 'Tax' },
         ],
         effort: 'high',
         impact: 'high',

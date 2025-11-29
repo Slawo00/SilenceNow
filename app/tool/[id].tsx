@@ -8,12 +8,6 @@ import { goals } from '@/data/goals';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '@/components/GlobalHeader';
 
-const goalInfo: Record<string, { name: string; color: string; icon: string }> = {
-  speed: { name: 'Speed (Fast Close)', color: '#00D4AA', icon: 'bolt.fill' },
-  quality: { name: 'Quality & Accuracy', color: '#10B981', icon: 'checkmark.circle.fill' },
-  automation: { name: 'Automation', color: '#F59E0B', icon: 'gearshape.fill' },
-  compliance: { name: 'Compliance & Governance', color: '#6366F1', icon: 'shield.fill' },
-};
 
 export default function ToolDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -146,34 +140,6 @@ export default function ToolDetailScreen() {
             ))}
           </View>
         </View>
-
-        {tool.recommendedGoals.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconSymbol name="target" size={22} color={colors.tint} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
-                Recommended For
-              </ThemedText>
-            </View>
-            <View style={styles.goalChipsContainer}>
-              {tool.recommendedGoals.map(goalId => {
-                const goal = goalInfo[goalId];
-                if (!goal) return null;
-                return (
-                  <TouchableOpacity
-                    key={goalId}
-                    style={[styles.goalChip, { backgroundColor: goal.color + '20', borderColor: goal.color + '40' }]}
-                    onPress={() => router.push(`/goal/${goalId}`)}
-                    activeOpacity={0.7}
-                  >
-                    <IconSymbol name={goal.icon as any} size={18} color={goal.color} />
-                    <ThemedText style={[styles.goalChipText, { color: goal.color }]}>{goal.name}</ThemedText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
 
         {relatedLevers.length > 0 && (
           <View style={styles.section}>
@@ -311,22 +277,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-  },
-  goalChipsContainer: {
-    gap: 10,
-  },
-  goalChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 12,
-  },
-  goalChipText: {
-    fontSize: 15,
-    fontWeight: '600',
   },
   leverCard: {
     padding: 16,
