@@ -57,6 +57,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'BlackLine', description: 'Automated account reconciliation', category: 'Reconciliation' },
           { name: 'ReconArt', description: 'AI-powered matching engine', category: 'Reconciliation' },
+          { name: 'Numeric', description: 'AI-powered close management', category: 'Accounting Automation' },
         ],
         effort: 'medium',
         impact: 'high',
@@ -76,6 +77,8 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'Workiva', description: 'Workflow orchestration', category: 'Workflow' },
           { name: 'FloQast', description: 'Close management platform', category: 'Close Management' },
+          { name: 'FloQast AI', description: 'AI-assisted close', category: 'Accounting Automation' },
+          { name: 'Workiva Workflow', description: 'Process orchestration', category: 'Workflow' },
         ],
         effort: 'high',
         impact: 'high',
@@ -114,6 +117,8 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'SAP S/4HANA', description: 'Integrated booking automation', category: 'ERP' },
           { name: 'Oracle Financials', description: 'Automated journal entries', category: 'ERP' },
+          { name: 'Zeni', description: 'AI-powered bookkeeping', category: 'Accounting Automation' },
+          { name: 'Docyt', description: 'Automated bookkeeping', category: 'Accounting Automation' },
         ],
         effort: 'medium',
         impact: 'high',
@@ -171,6 +176,8 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'Vic.ai', description: 'AI-powered invoice coding', category: 'AP Automation' },
           { name: 'AppZen', description: 'Intelligent booking assignment', category: 'AI Finance' },
+          { name: 'Routable', description: 'AP workflows and payments', category: 'AP Automation' },
+          { name: 'Bookkeeping.ai', description: 'Automated categorization', category: 'Accounting Automation' },
         ],
         effort: 'medium',
         impact: 'high',
@@ -209,6 +216,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'Power BI', description: 'Business Intelligence', category: 'BI' },
           { name: 'Tableau', description: 'Data visualization', category: 'BI' },
+          { name: 'Workiva Reporting', description: 'Connected reporting', category: 'Reporting' },
         ],
         effort: 'low',
         impact: 'medium',
@@ -256,6 +264,8 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'MindBridge', description: 'AI Audit Platform', category: 'Audit' },
           { name: 'HighRadius', description: 'Anomaly detection', category: 'AI Finance' },
+          { name: 'DataSnipper', description: 'Automated evidence extraction', category: 'Audit' },
+          { name: 'Glean.ai', description: 'Spend analytics', category: 'AR' },
         ],
         effort: 'medium',
         impact: 'high',
@@ -313,6 +323,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'Workiva', description: 'Document management', category: 'Compliance' },
           { name: 'AuditBoard', description: 'Audit management', category: 'Audit' },
+          { name: 'Trullion', description: 'AI lease accounting and audit', category: 'Audit' },
         ],
         effort: 'medium',
         impact: 'medium',
@@ -513,6 +524,7 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'HighRadius Collections', description: 'AI Collections', category: 'AR' },
           { name: 'Esker', description: 'AR Automation', category: 'AR' },
+          { name: 'Nanonets AR', description: 'AI document extraction', category: 'AR' },
         ],
         effort: 'medium',
         impact: 'medium',
@@ -533,6 +545,9 @@ export const goals: Goal[] = [
           { name: 'SAP Ariba', description: 'Procurement Automation', category: 'P2P' },
           { name: 'Coupa', description: 'BSM Platform', category: 'P2P' },
           { name: 'Zoho Expense', description: 'Travel & Expense Automation', category: 'Expense Management' },
+          { name: 'Expensify', description: 'Expense reporting', category: 'Expense Management' },
+          { name: 'Emburse', description: 'Corporate spend management', category: 'Expense Management' },
+          { name: 'Ramp', description: 'Corporate cards and spend', category: 'Expense Management' },
         ],
         effort: 'high',
         impact: 'high',
@@ -572,6 +587,9 @@ export const goals: Goal[] = [
           { name: 'Microsoft Power Automate', description: 'Low-code workflows', category: 'Workflow' },
           { name: 'Nintex', description: 'Process Automation', category: 'Workflow' },
           { name: 'Zoho Expense', description: 'Multi-level approval workflows', category: 'Expense Management' },
+          { name: 'Divvy', description: 'Spend management', category: 'Expense Management' },
+          { name: 'Moss', description: 'Corporate cards & expense control', category: 'Expense Management' },
+          { name: 'Rydoo', description: 'Travel & expense management', category: 'Expense Management' },
         ],
         effort: 'low',
         impact: 'medium',
@@ -657,6 +675,9 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'IBM Planning Analytics', description: 'AI Forecasting', category: 'FP&A' },
           { name: 'Anaplan', description: 'Predictive Planning', category: 'FP&A' },
+          { name: 'Pigment', description: 'Revenue and cash-flow forecasting', category: 'FP&A' },
+          { name: 'Jirav', description: 'Forecasting for mid-market', category: 'FP&A' },
+          { name: 'Abacum', description: 'Financial planning and reporting', category: 'FP&A' },
         ],
         effort: 'high',
         impact: 'high',
@@ -734,6 +755,8 @@ export const goals: Goal[] = [
         aiTools: [
           { name: 'Jedox', description: 'Driver-Based Planning', category: 'FP&A' },
           { name: 'Board', description: 'Decision Making Platform', category: 'FP&A' },
+          { name: 'Causal', description: 'Financial modeling and planning', category: 'FP&A & Modeling' },
+          { name: 'OnPlan', description: 'Financial planning', category: 'FP&A & Modeling' },
         ],
         effort: 'medium',
         impact: 'high',
