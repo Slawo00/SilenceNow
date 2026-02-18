@@ -1,44 +1,45 @@
 {
   "expo": {
-    "name": "SigmaFinanceAI",
-    "slug": "sigma-finance-ai",
+    "name": "SilenceNow",
+    "slug": "silencenow-mvp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "sigmafinance",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A2332"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sigmafinance.ai"
+      "bundleIdentifier": "com.silencenow.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "SilenceNow measures ambient noise levels to document disturbances. No audio is recorded—only decibel values.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A2332"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.sigmafinance.ai"
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "package": "com.silencenow.app",
+      "permissions": [
+        "RECORD_AUDIO",
+        "FOREGROUND_SERVICE"
+      ]
     },
     "plugins": [
-      "expo-router",
       [
-        "expo-splash-screen",
+        "expo-av",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#1a1a2e"
+          "microphonePermission": "SilenceNow measures ambient noise levels (decibels only, no audio recording)."
         }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
+      ],
+      "expo-sqlite"
+    ]
   }
 }
