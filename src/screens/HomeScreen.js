@@ -84,6 +84,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const stopMonitoring = async () => {
+    await EventDetector.forceEndEvent();
     await AudioMonitor.stopMonitoring();
     setIsMonitoring(false);
     setCurrentDecibel(0);

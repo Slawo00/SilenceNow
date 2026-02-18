@@ -61,6 +61,7 @@ class AudioMonitor {
           const metering = status.metering ?? -160;
           const dbSPL = this._convertToSPL(metering);
           this.currentDecibel = dbSPL;
+          console.log(`[AudioMonitor] raw=${metering.toFixed(1)} dBFS → ${dbSPL} dB SPL`);
 
           const normalizedMetering = Math.max(0, Math.min(1, (metering + 160) / 160));
           const freqBands = estimateFrequencyBands(normalizedMetering);
@@ -110,9 +111,9 @@ class AudioMonitor {
   }
 
   _convertToSPL(meteringDbFS) {
-    const clamped = Math.max(-60, Math.min(0, meteringDbFS));
-    const dbSPL = 110 + (clamped * 2.0);
-    return Math.max(20, Math.min(120, Math.round(dbSPL)));
+    const clamped = Math.max(-80, Math.min(0, meteringDbFS));
+    const dbSPL = clamped + 100;
+    return Math.max(20, Math.min(130, Math.round(dbSPL)));
   }
 
   async stopMonitoring() {

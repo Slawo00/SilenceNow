@@ -67,12 +67,25 @@ class EventDetector {
     }
   }
 
+  async forceEndEvent() {
+    if (this.activeEvent && !this._finalizing) {
+      this._finalizing = true;
+      try {
+        await this.endEvent();
+      } finally {
+        this._finalizing = false;
+      }
+    }
+  }
+
   async endEvent() {
     const duration = Date.now() - this.eventStartTime;
 
     if (duration < DEFAULTS.EVENT_MIN_DURATION) {
       console.log('Event too short, discarded');
       this.activeEvent = null;
+      this.eventStartTime = null;
+      this.quietSince = null;
       return;
     }
 
