@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  AppState,
 } from 'react-native';
 import { COLORS, DEFAULTS } from '../utils/constants';
 import AudioMonitor from '../services/AudioMonitor';
@@ -25,15 +26,31 @@ export default function HomeScreen({ navigation }) {
     daysMonitored: 0,
   });
   const [refreshing, setRefreshing] = useState(false);
+  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     loadData();
+
+    EventDetector.setOnEventSaved(() => {
+      loadData();
+    });
+
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (appState.current.match(/background/) && nextAppState === 'active') {
+        loadData();
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription?.remove();
+    };
   }, []);
 
   const loadData = async () => {
     try {
       const allEvents = await DatabaseService.getAllEvents();
-      setEvents(allEvents.slice(0, 10));
+      setEvents(allEvents.slice(0, 20));
 
       const count = await DatabaseService.getEventsCount(14);
       const avg = await DatabaseService.getAverageDecibel(14);

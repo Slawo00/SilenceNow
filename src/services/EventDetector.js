@@ -8,6 +8,11 @@ class EventDetector {
     this.eventStartTime = null;
     this.eventPeakDb = 0;
     this.eventMeasurements = [];
+    this.onEventSaved = null;
+  }
+
+  setOnEventSaved(callback) {
+    this.onEventSaved = callback;
   }
 
   processMeasurement(measurement) {
@@ -83,8 +88,11 @@ class EventDetector {
     };
 
     await DatabaseService.insertEvent(event);
-
     console.log('Event saved:', event);
+
+    if (this.onEventSaved) {
+      this.onEventSaved(event);
+    }
 
     this.activeEvent = null;
     this.eventStartTime = null;

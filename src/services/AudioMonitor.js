@@ -5,6 +5,7 @@ import { DEFAULTS } from '../utils/constants';
 class AudioMonitor {
   constructor() {
     this.recording = null;
+    this.silentSound = null;
     this.isMonitoring = false;
     this.currentDecibel = 0;
     this.measurementInterval = null;
@@ -40,6 +41,8 @@ class AudioMonitor {
         playThroughEarpieceAndroid: false,
       });
 
+      await this._startSilentAudio();
+
       this.recording = new Audio.Recording();
       await this.recording.prepareToRecordAsync({
         ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
@@ -74,11 +77,35 @@ class AudioMonitor {
         }
       }, DEFAULTS.SAMPLE_INTERVAL);
 
-      console.log('Monitoring started');
+      console.log('Monitoring started (with background audio)');
     } catch (error) {
       console.error('Error starting monitoring:', error);
       this.isMonitoring = false;
       await this._cleanupRecording();
+      await this._stopSilentAudio();
+    }
+  }
+
+  async _startSilentAudio() {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=' },
+        { isLooping: true, volume: 0.01, shouldPlay: true }
+      );
+      this.silentSound = sound;
+      console.log('Silent background audio started');
+    } catch (error) {
+      console.warn('Silent audio error (non-critical):', error.message);
+    }
+  }
+
+  async _stopSilentAudio() {
+    if (this.silentSound) {
+      try {
+        await this.silentSound.stopAsync();
+        await this.silentSound.unloadAsync();
+      } catch (_) {}
+      this.silentSound = null;
     }
   }
 
@@ -97,6 +124,7 @@ class AudioMonitor {
     }
 
     await this._cleanupRecording();
+    await this._stopSilentAudio();
     this.currentDecibel = 0;
     console.log('Monitoring stopped');
   }
