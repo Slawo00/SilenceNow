@@ -6,9 +6,9 @@ class EventDetector {
   constructor() {
     this.activeEvent = null;
     this.eventStartTime = null;
-    this.eventPeakDb = 0;
-    this.eventMeasurements = [];
     this.onEventSaved = null;
+    this.quietSince = null;
+    this._finalizing = false;
   }
 
   setOnEventSaved(callback) {
@@ -16,9 +16,13 @@ class EventDetector {
   }
 
   processMeasurement(measurement) {
-    const { decibel, freqBands, timestamp } = measurement;
+    if (this._finalizing) return;
+
+    const { decibel } = measurement;
 
     if (decibel >= DEFAULTS.THRESHOLD_DB) {
+      this.quietSince = null;
+
       if (!this.activeEvent) {
         this.startEvent(measurement);
       } else {
@@ -26,7 +30,20 @@ class EventDetector {
       }
     } else {
       if (this.activeEvent) {
-        this.endEvent();
+        if (!this.quietSince) {
+          this.quietSince = Date.now();
+        }
+
+        const quietDuration = Date.now() - this.quietSince;
+        if (quietDuration >= DEFAULTS.EVENT_MERGE_GAP) {
+          this._finalizing = true;
+          this.endEvent().finally(() => {
+            this._finalizing = false;
+          });
+          this.quietSince = null;
+        } else {
+          this.continueEvent(measurement);
+        }
       }
     }
   }
@@ -59,17 +76,23 @@ class EventDetector {
       return;
     }
 
-    const avgDecibel = this.activeEvent.measurements.reduce(
+    const loudMeasurements = this.activeEvent.measurements.filter(
+      m => m.decibel >= DEFAULTS.THRESHOLD_DB
+    );
+
+    const measurementsForAvg = loudMeasurements.length > 0 ? loudMeasurements : this.activeEvent.measurements;
+
+    const avgDecibel = measurementsForAvg.reduce(
       (sum, m) => sum + m.decibel,
       0
-    ) / this.activeEvent.measurements.length;
+    ) / measurementsForAvg.length;
 
     const avgFreqBands = {
-      bass: this.activeEvent.measurements.reduce((sum, m) => sum + m.freqBands.bass, 0) / this.activeEvent.measurements.length,
-      lowMid: this.activeEvent.measurements.reduce((sum, m) => sum + m.freqBands.lowMid, 0) / this.activeEvent.measurements.length,
-      mid: this.activeEvent.measurements.reduce((sum, m) => sum + m.freqBands.mid, 0) / this.activeEvent.measurements.length,
-      highMid: this.activeEvent.measurements.reduce((sum, m) => sum + m.freqBands.highMid, 0) / this.activeEvent.measurements.length,
-      high: this.activeEvent.measurements.reduce((sum, m) => sum + m.freqBands.high, 0) / this.activeEvent.measurements.length,
+      bass: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.bass, 0) / measurementsForAvg.length,
+      lowMid: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.lowMid, 0) / measurementsForAvg.length,
+      mid: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.mid, 0) / measurementsForAvg.length,
+      highMid: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.highMid, 0) / measurementsForAvg.length,
+      high: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.high, 0) / measurementsForAvg.length,
     };
 
     let classification = 'Loud';
@@ -88,7 +111,7 @@ class EventDetector {
     };
 
     await DatabaseService.insertEvent(event);
-    console.log('Event saved:', event);
+    console.log('Event saved:', event.classification, event.decibel, 'dB,', event.duration, 's');
 
     if (this.onEventSaved) {
       this.onEventSaved(event);

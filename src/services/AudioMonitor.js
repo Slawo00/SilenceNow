@@ -110,8 +110,8 @@ class AudioMonitor {
   }
 
   _convertToSPL(meteringDbFS) {
-    const clamped = Math.max(-160, Math.min(0, meteringDbFS));
-    const dbSPL = clamped + 90;
+    const clamped = Math.max(-60, Math.min(0, meteringDbFS));
+    const dbSPL = 110 + (clamped * 2.0);
     return Math.max(20, Math.min(120, Math.round(dbSPL)));
   }
 
