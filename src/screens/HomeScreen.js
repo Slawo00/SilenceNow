@@ -178,23 +178,6 @@ export default function HomeScreen({ navigation }) {
         )}
       </View>
 
-      {__DEV__ && (
-        <View style={styles.debugBox}>
-          <Text style={styles.debugText}>Debug Info:</Text>
-          <Text style={styles.debugText}>Monitoring: {isMonitoring ? 'Yes' : 'No'}</Text>
-          <Text style={styles.debugText}>Current dB: {currentDecibel}</Text>
-          <Text style={styles.debugText}>Events in DB: {stats.totalEvents}</Text>
-          <TouchableOpacity
-            onPress={async () => {
-              await DatabaseService.deleteAllEvents();
-              loadData();
-              Alert.alert('Debug', 'All events deleted');
-            }}
-          >
-            <Text style={styles.debugButton}>Delete All Events</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -345,24 +328,5 @@ const styles = StyleSheet.create({
     color: COLORS.WARM_GREY,
     textAlign: 'center',
     paddingHorizontal: 40,
-  },
-  debugBox: {
-    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-    margin: 20,
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.WARNING_AMBER,
-  },
-  debugText: {
-    fontSize: 12,
-    color: COLORS.SOFT_WHITE,
-    marginBottom: 4,
-  },
-  debugButton: {
-    fontSize: 14,
-    color: COLORS.ERROR_RED,
-    marginTop: 8,
-    fontWeight: '600',
   },
 });

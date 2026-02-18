@@ -7,8 +7,7 @@ class AudioMonitor {
     this.recording = null;
     this.isMonitoring = false;
     this.currentDecibel = 0;
-    this.listeners = [];
-    this.silentSound = null;
+    this.measurementInterval = null;
   }
 
   async requestPermission() {
@@ -17,7 +16,6 @@ class AudioMonitor {
       if (status !== 'granted') {
         throw new Error('Microphone permission denied');
       }
-      console.log('Microphone permission granted');
       return true;
     } catch (error) {
       console.error('Permission error:', error);
@@ -25,8 +23,15 @@ class AudioMonitor {
     }
   }
 
-  async startBackgroundAudio() {
+  async startMonitoring(onMeasurement) {
+    if (this.isMonitoring) {
+      return;
+    }
+
     try {
+      const hasPermission = await this.requestPermission();
+      if (!hasPermission) return;
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -35,80 +40,52 @@ class AudioMonitor {
         playThroughEarpieceAndroid: false,
       });
 
-      this.silentSound = new Audio.Sound();
-      await this.silentSound.loadAsync(
-        { uri: 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAUHAAAAAAAAAOGFjE+EAAAAAAAAAAAAAAAAAAAAAP/7kGQAD/AAAGkAAAAIAAANIAAAAQAAAaQAAAAgAAA0gAAABExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV' },
-        { isLooping: true, volume: 0 }
-      );
-      await this.silentSound.playAsync();
-
-      console.log('Background audio started');
-    } catch (error) {
-      console.error('Background audio error:', error);
-    }
-  }
-
-  async startMonitoring(onMeasurement) {
-    if (this.isMonitoring) {
-      console.log('Already monitoring');
-      return;
-    }
-
-    try {
-      const hasPermission = await this.requestPermission();
-      if (!hasPermission) return;
-
-      await this.startBackgroundAudio();
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
+      this.recording = new Audio.Recording();
+      await this.recording.prepareToRecordAsync({
+        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        isMeteringEnabled: true,
       });
+      await this.recording.startAsync();
 
       this.isMonitoring = true;
 
       this.measurementInterval = setInterval(async () => {
-        await this.takeMeasurement(onMeasurement);
+        if (!this.isMonitoring || !this.recording) return;
+        try {
+          const status = await this.recording.getStatusAsync();
+          if (!status.isRecording) return;
+
+          const metering = status.metering ?? -160;
+          const dbSPL = this._convertToSPL(metering);
+          this.currentDecibel = dbSPL;
+
+          const normalizedMetering = Math.max(0, Math.min(1, (metering + 160) / 160));
+          const freqBands = estimateFrequencyBands(normalizedMetering);
+
+          if (onMeasurement) {
+            onMeasurement({
+              decibel: this.currentDecibel,
+              freqBands,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch (error) {
+          console.warn('Measurement read error:', error.message);
+        }
       }, DEFAULTS.SAMPLE_INTERVAL);
 
       console.log('Monitoring started');
     } catch (error) {
       console.error('Error starting monitoring:', error);
       this.isMonitoring = false;
+      await this._cleanupRecording();
     }
   }
 
-  async takeMeasurement(callback) {
-    try {
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const status = await recording.getStatusAsync();
-      await recording.stopAndUnloadAsync();
-
-      const metering = status.metering || -160;
-      const normalizedMetering = (metering + 160) / 160;
-      const decibel = 30 + (normalizedMetering * 90);
-
-      this.currentDecibel = Math.round(decibel);
-
-      const freqBands = estimateFrequencyBands(normalizedMetering);
-
-      if (callback) {
-        callback({
-          decibel: this.currentDecibel,
-          freqBands,
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-    } catch (error) {
-      console.error('Measurement error:', error);
-    }
+  _convertToSPL(meteringDbFS) {
+    const clamped = Math.max(-160, Math.min(0, meteringDbFS));
+    const dbSPL = clamped + 90;
+    return Math.max(20, Math.min(120, Math.round(dbSPL)));
   }
 
   async stopMonitoring() {
@@ -119,13 +96,25 @@ class AudioMonitor {
       this.measurementInterval = null;
     }
 
-    if (this.silentSound) {
-      await this.silentSound.stopAsync();
-      await this.silentSound.unloadAsync();
-      this.silentSound = null;
-    }
-
+    await this._cleanupRecording();
+    this.currentDecibel = 0;
     console.log('Monitoring stopped');
+  }
+
+  async _cleanupRecording() {
+    if (this.recording) {
+      try {
+        const status = await this.recording.getStatusAsync();
+        if (status.isRecording) {
+          await this.recording.stopAndUnloadAsync();
+        }
+      } catch (e) {
+        try {
+          await this.recording.stopAndUnloadAsync();
+        } catch (_) {}
+      }
+      this.recording = null;
+    }
   }
 
   getCurrentDecibel() {
