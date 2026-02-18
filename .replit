@@ -6,11 +6,7 @@ channel = "stable-24_05"
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 5001
-externalPort = 3003
+externalPort = 80
 
 [[ports]]
 localPort = 8081
@@ -41,7 +37,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npx expo start --web --port 5000"
+args = "EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0 npx expo start --web --port 5000 --host lan"
 waitForPort = 5000
 
 [agent]
