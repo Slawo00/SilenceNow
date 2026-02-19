@@ -1,9 +1,6 @@
 /**
- * SilenceNow Reports Screen - Revenue Generation Hub
- * 
- * BUSINESS GOAL: Convert users to paying customers through compelling legal reports
- * REVENUE MODEL: Freemium → Basic (€19.99) → Premium (€49.99)
- * VALUE PROP: "Gerichtsfeste Beweise für deine Mietminderung"
+ * ReportsScreen - Legal Reports & §536 BGB Assessment
+ * Punkt 7 + 8: PDF Reports + Rechtliche Bewertung
  */
 
 import React, { useState, useEffect } from 'react';
@@ -14,623 +11,653 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Share,
-  Linking
+  ActivityIndicator,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import BRAND from '../theme/BrandColors';
-import DatabaseServiceV2 from '../services/DatabaseServiceV2';
+import { COLORS } from '../utils/constants';
+import DatabaseService from '../services/DatabaseService';
+import ReportService from '../services/ReportService';
+import LegalService from '../services/LegalService';
 
 export default function ReportsScreen({ navigation }) {
-  const [legalSummary, setLegalSummary] = useState(null);
+  const [legalAssessment, setLegalAssessment] = useState(null);
+  const [quickEstimate, setQuickEstimate] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [userTier, setUserTier] = useState('free'); // free, basic, premium
-  const [reportsGenerated, setReportsGenerated] = useState(0);
-
-  const dbService = new DatabaseServiceV2();
 
   useEffect(() => {
-    loadLegalSummary();
-    // TODO: Load user subscription status
+    loadData();
   }, []);
 
-  const loadLegalSummary = async () => {
+  const loadData = async () => {
+    setIsLoading(true);
     try {
-      const summary = await dbService.getLegalSummary(null, '30d');
-      setLegalSummary(summary);
+      const [assessment, estimate] = await Promise.all([
+        LegalService.generateLegalAssessment({ days: 14 }),
+        LegalService.getQuickEstimate()
+      ]);
+      setLegalAssessment(assessment);
+      setQuickEstimate(estimate);
     } catch (error) {
-      console.error('Failed to load legal summary:', error);
+      console.error('Failed to load legal data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const generateReport = async (reportType) => {
-    if (!canGenerateReport(reportType)) {
-      showUpgradeDialog(reportType);
-      return;
-    }
-
+  const generatePDF = async () => {
     setIsGenerating(true);
     try {
-      const report = await dbService.generateLegalReport(null, '30d');
-      
-      // TODO: Generate actual PDF
-      Alert.alert(
-        "Bericht generiert!",
-        `Dein ${reportType} Lärmprotokoll ist bereit. Potentielle Mietminderung: ${report.summary.avgRentReduction}%`,
-        [
-          { text: "Teilen", onPress: () => shareReport(report) },
-          { text: "Anzeigen", onPress: () => viewReport(report) }
-        ]
-      );
+      const result = await ReportService.generateReport({
+        days: 14,
+        includeDetails: true,
+        language: 'de',
+        userInfo: {
+          // Will be filled from user settings when available
+        }
+      });
+
+      if (result.success) {
+        Alert.alert(
+          'Bericht erstellt! 📄',
+          `Dein 14-Tage Lärmprotokoll wurde generiert.\n\n` +
+          `${result.summary.totalEvents} Ereignisse dokumentiert\n` +
+          `${result.summary.nightViolations} Nachtruhestörungen\n` +
+          `Rechtsposition: ${result.summary.legalStrength}`,
+          [
+            { text: 'Teilen', onPress: () => ReportService.shareReport(result.uri) },
+            { text: 'OK' }
+          ]
+        );
+      } else {
+        Alert.alert('Fehler', result.error || 'Bericht konnte nicht erstellt werden.');
+      }
     } catch (error) {
-      Alert.alert("Fehler", "Bericht konnte nicht generiert werden.");
+      Alert.alert('Fehler', 'Ein unerwarteter Fehler ist aufgetreten.');
+      console.error('PDF generation error:', error);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const canGenerateReport = (reportType) => {
-    if (userTier === 'premium') return true;
-    if (userTier === 'basic' && reportsGenerated < 5) return true;
-    if (userTier === 'free' && reportsGenerated < 1 && reportType === 'basic') return true;
-    return false;
-  };
-
-  const showUpgradeDialog = (reportType) => {
-    const upgradeMessage = userTier === 'free' 
-      ? "Für weitere Berichte benötigst du SilenceNow Basic (€19.99)"
-      : "Für Premium-Features benötigst du SilenceNow Premium (€49.99)";
-    
-    Alert.alert(
-      "Upgrade erforderlich",
-      upgradeMessage,
-      [
-        { text: "Später", style: "cancel" },
-        { text: "Upgrade", onPress: () => navigation.navigate('Upgrade') }
-      ]
-    );
-  };
-
-  const shareReport = async (report) => {
-    try {
-      await Share.share({
-        message: `Mein SilenceNow Lärmprotokoll:\n${report.summary.totalEvents} Störungen dokumentiert\nPotentielle Mietminderung: ${report.summary.avgRentReduction}%\n\nGeneriert mit SilenceNow - Dein Recht automatisch durchgesetzt.`,
-        title: "SilenceNow Lärmprotokoll"
-      });
-    } catch (error) {
-      console.error('Share failed:', error);
-    }
-  };
-
-  const viewReport = (report) => {
-    navigation.navigate('ReportViewer', { report });
-  };
-
-  const renderLegalSummaryCard = () => {
-    if (!legalSummary) return null;
-
-    const recommendation = legalSummary.legalRecommendation;
-    const isStrong = legalSummary.averageLegalScore > 70;
-    const hasSignificantEvents = legalSummary.totalEvents > 5;
-
+  if (isLoading) {
     return (
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryHeader}>
-          <Text style={styles.summaryTitle}>Deine Rechtslage (30 Tage)</Text>
-          <View style={[
-            styles.strengthBadge, 
-            isStrong ? styles.strengthStrong : styles.strengthModerate
-          ]}>
-            <Text style={styles.strengthText}>
-              {isStrong ? 'STARK' : 'AUFBAUEND'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.metricsGrid}>
-          <MetricCard 
-            icon="📊"
-            value={legalSummary.totalEvents}
-            label="Störungen"
-            subtext="dokumentiert"
-          />
-          <MetricCard 
-            icon="⚖️"
-            value={`${legalSummary.averageLegalScore}/100`}
-            label="Legal Score"
-            subtext="Beweiskraft"
-          />
-          <MetricCard 
-            icon="🌙"
-            value={legalSummary.nighttimeViolations}
-            label="Nachts"
-            subtext="schwerer wiegend"
-          />
-          <MetricCard 
-            icon="💰"
-            value={`${legalSummary.avgRentReduction}%`}
-            label="Minderung"
-            subtext="möglich"
-          />
-        </View>
-
-        <View style={styles.potentialSavings}>
-          <Text style={styles.savingsTitle}>💰 Geschätztes Sparpotential</Text>
-          <Text style={styles.savingsAmount}>
-            {legalSummary.estimatedMonthlyReduction}€/Monat
-          </Text>
-          <Text style={styles.savingsAnnual}>
-            ({legalSummary.estimatedAnnualSavings}€/Jahr)
-          </Text>
-        </View>
-
-        <View style={styles.recommendationBox}>
-          <Text style={styles.recommendationTitle}>
-            🎯 Handlungsempfehlung
-          </Text>
-          <Text style={styles.recommendationText}>
-            {getRecommendationText(recommendation)}
-          </Text>
-          <View style={styles.confidenceBar}>
-            <View 
-              style={[
-                styles.confidenceFill, 
-                { width: `${recommendation.estimatedSuccess}%` }
-              ]} 
-            />
-          </View>
-          <Text style={styles.confidenceText}>
-            {recommendation.estimatedSuccess}% Erfolgschance
-          </Text>
-        </View>
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={COLORS.ELECTRIC_GREEN} />
+        <Text style={styles.loadingText}>Rechtliche Analyse wird geladen...</Text>
       </View>
     );
-  };
-
-  const getRecommendationText = (recommendation) => {
-    switch (recommendation.action) {
-      case 'immediate_legal_action':
-        return 'Deine Beweislage ist stark! Zeit für professionelle Hilfe.';
-      case 'formal_complaint':
-        return 'Bereit für formelle Beschwerde beim Vermieter.';
-      case 'continue_monitoring':
-        return 'Sammle weiter Beweise für stärkere Position.';
-      default:
-        return 'Dokumentiere kontinuierlich deine Störungen.';
-    }
-  };
-
-  const renderReportOptions = () => (
-    <View style={styles.reportsSection}>
-      <Text style={styles.sectionTitle}>Gerichtsfeste Berichte</Text>
-      
-      {/* Basic Report */}
-      <ReportOption
-        title="Basis-Lärmprotokoll"
-        subtitle="Grundlegendes Beweisprotokoll für Vermieter"
-        price={userTier === 'free' ? '€19,99' : 'INKLUSIVE'}
-        features={[
-          'Chronologisches Lärmprotokoll',
-          'Dezibel-Statistiken',
-          'Rechtliche Einordnung',
-          'Muster-Beschwerde Brief'
-        ]}
-        onPress={() => generateReport('basic')}
-        disabled={isGenerating}
-        isPremium={userTier === 'free'}
-        badge={userTier === 'free' && reportsGenerated === 0 ? 'GRATIS-TEST' : null}
-      />
-
-      {/* Premium Report */}
-      <ReportOption
-        title="Premium-Beweisdossier"
-        subtitle="Vollständige Dokumentation für Anwälte"
-        price={userTier === 'premium' ? 'INKLUSIVE' : '€49,99'}
-        features={[
-          'Detailliertes Lärmprotokoll',
-          'Juristische Analyse',
-          'BGH-konforme Aufbereitung',
-          'Mietminderungs-Berechnung',
-          'Anwalts-Musterbriefe',
-          '24/7 Chat Support'
-        ]}
-        onPress={() => generateReport('premium')}
-        disabled={isGenerating}
-        isPremium={userTier !== 'premium'}
-        badge="ANWALTS-QUALITÄT"
-      />
-
-      {/* Legal Action Package */}
-      <ReportOption
-        title="Sofort-Durchsetzungs-Paket"
-        subtitle="Komplette Mietminderung sofort durchsetzen"
-        price="€99,99"
-        features={[
-          'Alle Premium-Features',
-          'Anwalts-Vermittlung',
-          'Erfolgs-Garantie*',
-          'Express-Bearbeitung (24h)',
-          'Telefonische Beratung'
-        ]}
-        onPress={() => generateReport('legal_action')}
-        disabled={isGenerating}
-        isPremium={true}
-        badge="NEU"
-        highlight={true}
-      />
-    </View>
-  );
-
-  const MetricCard = ({ icon, value, label, subtext }) => (
-    <View style={styles.metricCard}>
-      <Text style={styles.metricIcon}>{icon}</Text>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={styles.metricSubtext}>{subtext}</Text>
-    </View>
-  );
-
-  const ReportOption = ({ 
-    title, 
-    subtitle, 
-    price, 
-    features, 
-    onPress, 
-    disabled, 
-    isPremium, 
-    badge, 
-    highlight 
-  }) => (
-    <View style={[styles.reportCard, highlight && styles.reportCardHighlight]}>
-      {badge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{badge}</Text>
-        </View>
-      )}
-      
-      <View style={styles.reportHeader}>
-        <View style={styles.reportTitleArea}>
-          <Text style={styles.reportTitle}>{title}</Text>
-          <Text style={styles.reportSubtitle}>{subtitle}</Text>
-        </View>
-        <Text style={[
-          styles.reportPrice,
-          !isPremium && styles.reportPriceIncluded
-        ]}>
-          {price}
-        </Text>
-      </View>
-
-      <View style={styles.featuresList}>
-        {features.map((feature, index) => (
-          <View key={index} style={styles.featureItem}>
-            <Text style={styles.featureCheck}>✅</Text>
-            <Text style={styles.featureText}>{feature}</Text>
-          </View>
-        ))}
-      </View>
-
-      <TouchableOpacity
-        style={[
-          styles.reportButton,
-          highlight ? styles.reportButtonHighlight : styles.reportButtonDefault,
-          disabled && styles.reportButtonDisabled
-        ]}
-        onPress={onPress}
-        disabled={disabled}
-      >
-        <Text style={[
-          styles.reportButtonText,
-          highlight && styles.reportButtonTextHighlight
-        ]}>
-          {disabled ? 'Generiere...' : 'Bericht erstellen'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+  }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" backgroundColor={BRAND.COLORS.QUIET_SILVER} />
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Deine Beweise</Text>
-          <Text style={styles.headerSubtitle}>
-            {BRAND.MESSAGES.LEGAL_CONFIDENCE}
-          </Text>
-        </View>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backButton}>← Zurück</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Rechtliche Bewertung</Text>
+        <Text style={styles.headerSubtitle}>§536 BGB Mietminderung</Text>
+      </View>
 
-        {renderLegalSummaryCard()}
-        {renderReportOptions()}
-
-        <View style={styles.legalNote}>
-          <Text style={styles.legalNoteText}>
-            * Alle Berichte entsprechen BGH-Standards und sind gerichtsverwertbar. 
-            Keine Rechtsberatung. Bei Fragen wende dich an einen Anwalt.
+      {/* Quick Estimate Card */}
+      {quickEstimate && (
+        <View style={styles.estimateCard}>
+          <Text style={styles.estimateTitle}>💰 Geschätzte Mietminderung</Text>
+          <Text style={styles.estimatePercent}>{quickEstimate.percent}%</Text>
+          <Text style={styles.estimateConfidence}>
+            Konfidenz: {quickEstimate.confidence}
           </Text>
+          <Text style={styles.estimateMessage}>{quickEstimate.message}</Text>
+          {quickEstimate.needsMoreData && (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>
+                ⚠️ Mehr Daten nötig. Mindestens 14 Tage dokumentieren für belastbare Schätzung.
+              </Text>
+            </View>
+          )}
         </View>
-      </ScrollView>
-    </View>
+      )}
+
+      {/* Legal Assessment */}
+      {legalAssessment && !legalAssessment.error && (
+        <>
+          {/* Rechtsposition */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>⚖️ Deine Rechtsposition</Text>
+            <View style={styles.assessmentRow}>
+              <Text style={styles.assessmentLabel}>Bewertung:</Text>
+              <Text style={[styles.assessmentValue, 
+                legalAssessment.legalAssessment.strengthLevel === 'very_strong' && styles.textStrong,
+                legalAssessment.legalAssessment.strengthLevel === 'strong' && styles.textGood,
+                legalAssessment.legalAssessment.strengthLevel === 'moderate' && styles.textModerate,
+              ]}>
+                {legalAssessment.legalAssessment.strength}
+              </Text>
+            </View>
+            <View style={styles.assessmentRow}>
+              <Text style={styles.assessmentLabel}>Grundlage:</Text>
+              <Text style={styles.assessmentValue}>
+                {legalAssessment.legalAssessment.basisParagraph}
+              </Text>
+            </View>
+            
+            {/* Weitere Paragraphen */}
+            {legalAssessment.legalAssessment.additionalParagraphs?.length > 0 && (
+              <View style={styles.paragraphBox}>
+                <Text style={styles.paragraphTitle}>Relevante Rechtsgrundlagen:</Text>
+                {legalAssessment.legalAssessment.additionalParagraphs.map((p, i) => (
+                  <Text key={i} style={styles.paragraphItem}>• {p}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Statistiken */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>📊 Zusammenfassung (14 Tage)</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{legalAssessment.summary.totalEvents}</Text>
+                <Text style={styles.statLabel}>Ereignisse</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{legalAssessment.summary.nightViolations}</Text>
+                <Text style={styles.statLabel}>Nachts</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{legalAssessment.summary.highSeverityEvents}</Text>
+                <Text style={styles.statLabel}>Schwer</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{legalAssessment.summary.avgDecibel} dB</Text>
+                <Text style={styles.statLabel}>Ø Laut</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Mietminderung */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>💶 Mietminderungsanspruch</Text>
+            <View style={styles.reductionBox}>
+              <Text style={styles.reductionPercent}>
+                {legalAssessment.rentReduction.percent}%
+              </Text>
+              <Text style={styles.reductionLabel}>Geschätzte Mietminderung</Text>
+              {legalAssessment.rentReduction.monthlyAmount !== null && (
+                <Text style={styles.reductionAmount}>
+                  ca. {legalAssessment.rentReduction.monthlyAmount}€ / Monat
+                </Text>
+              )}
+            </View>
+            
+            {/* Berechnungsfaktoren */}
+            {legalAssessment.rentReduction.calculation?.length > 0 && (
+              <View style={styles.factorsBox}>
+                <Text style={styles.factorsTitle}>Berechnungsgrundlage:</Text>
+                {legalAssessment.rentReduction.calculation.map((factor, i) => (
+                  <Text key={i} style={styles.factorItem}>✓ {factor}</Text>
+                ))}
+              </View>
+            )}
+
+            {/* Gerichtsentscheidungen */}
+            {legalAssessment.rentReduction.courtReferences?.length > 0 && (
+              <View style={styles.referencesBox}>
+                <Text style={styles.referencesTitle}>Relevante Urteile:</Text>
+                {legalAssessment.rentReduction.courtReferences.map((ref, i) => (
+                  <Text key={i} style={styles.referenceItem}>📋 {ref}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Beweisqualität */}
+          {legalAssessment.evidenceQuality && (
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>🔍 Beweisqualität</Text>
+              <Text style={styles.qualityScore}>
+                {legalAssessment.evidenceQuality.score}/100 - {legalAssessment.evidenceQuality.quality}
+              </Text>
+              
+              {/* Kriterien */}
+              {legalAssessment.evidenceQuality.criteria?.map((criterion, i) => (
+                <View key={i} style={styles.criterionRow}>
+                  <Text style={styles.criterionIcon}>{criterion.met ? '✅' : '❌'}</Text>
+                  <Text style={styles.criterionText}>{criterion.name}</Text>
+                  <Text style={styles.criterionPoints}>{criterion.points}P</Text>
+                </View>
+              ))}
+              
+              <Text style={styles.qualityRecommendation}>
+                {legalAssessment.evidenceQuality.recommendation}
+              </Text>
+            </View>
+          )}
+
+          {/* Empfehlungen */}
+          {legalAssessment.recommendations?.length > 0 && (
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>📋 Empfehlungen</Text>
+              {legalAssessment.recommendations.map((rec, i) => (
+                <View key={i} style={[styles.recCard, 
+                  rec.priority === 'hoch' && styles.recCardHigh,
+                  rec.priority === 'mittel' && styles.recCardMedium
+                ]}>
+                  <View style={styles.recHeader}>
+                    <Text style={styles.recPriority}>
+                      {rec.priority === 'hoch' ? '🔴' : rec.priority === 'mittel' ? '🟡' : '🟢'} {rec.category}
+                    </Text>
+                  </View>
+                  <Text style={styles.recAction}>{rec.action}</Text>
+                  <Text style={styles.recDetails}>{rec.details}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Relevante Gerichtsentscheidungen */}
+          {legalAssessment.relevantDecisions?.length > 0 && (
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>⚖️ Vergleichbare Urteile</Text>
+              {legalAssessment.relevantDecisions.map((decision, i) => (
+                <View key={i} style={styles.decisionCard}>
+                  <Text style={styles.decisionRef}>{decision.reference}</Text>
+                  <Text style={styles.decisionDesc}>{decision.description}</Text>
+                  <Text style={styles.decisionReduction}>
+                    Zugesprochene Mietminderung: {decision.reduction}%
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </>
+      )}
+
+      {/* Generate PDF Button */}
+      <View style={styles.generateSection}>
+        <TouchableOpacity
+          style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
+          onPress={generatePDF}
+          disabled={isGenerating}
+        >
+          {isGenerating ? (
+            <ActivityIndicator color={COLORS.MIDNIGHT_BLUE} />
+          ) : (
+            <Text style={styles.generateButtonText}>📄 PDF-Bericht erstellen</Text>
+          )}
+        </TouchableOpacity>
+        <Text style={styles.generateHint}>
+          Erstellt ein gerichtsfestes 14-Tage Lärmprotokoll als PDF
+        </Text>
+      </View>
+
+      {/* Legal Disclaimer */}
+      <View style={styles.disclaimer}>
+        <Text style={styles.disclaimerText}>
+          ⚠️ Hinweis: Diese App bietet keine Rechtsberatung. Die Mietminderungsschätzungen 
+          basieren auf dokumentierten Gerichtsentscheidungen und dienen als Orientierung. 
+          Für eine verbindliche Beurteilung konsultieren Sie einen Fachanwalt für Mietrecht.
+        </Text>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BRAND.COLORS.QUIET_SILVER,
+    backgroundColor: COLORS.MIDNIGHT_BLUE,
   },
-  scrollView: {
-    flex: 1,
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  loadingText: {
+    color: COLORS.WARM_GREY,
+    marginTop: 12,
+    fontSize: 14,
+  },
+  
+  // Header
   header: {
-    padding: BRAND.SPACING.SCREEN_PADDING,
+    paddingHorizontal: 20,
     paddingTop: 60,
+    paddingBottom: 20,
+  },
+  backButton: {
+    color: COLORS.ELECTRIC_GREEN,
+    fontSize: 16,
+    marginBottom: 12,
   },
   headerTitle: {
-    fontSize: BRAND.TYPOGRAPHY.HERO_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.TEXT_PRIMARY,
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.SOFT_WHITE,
   },
   headerSubtitle: {
-    fontSize: BRAND.TYPOGRAPHY.BODY_SIZE,
-    color: BRAND.COLORS.TEXT_SECONDARY,
-    opacity: 0.8,
+    fontSize: 16,
+    color: COLORS.WARM_GREY,
+    marginTop: 4,
   },
-  
-  // Legal Summary Card
-  summaryCard: {
-    backgroundColor: BRAND.COLORS.BACKGROUND_CARD,
-    margin: BRAND.SPACING.SCREEN_PADDING,
-    padding: BRAND.SPACING.LG,
-    borderRadius: BRAND.RADIUS.LARGE,
-    ...BRAND.SHADOWS.MEDIUM,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  summaryTitle: {
-    fontSize: BRAND.TYPOGRAPHY.TITLE_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.TEXT_PRIMARY,
-  },
-  strengthBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+
+  // Estimate Card
+  estimateCard: {
+    backgroundColor: 'rgba(0, 230, 118, 0.15)',
+    marginHorizontal: 20,
+    marginBottom: 16,
     borderRadius: 16,
-  },
-  strengthStrong: {
-    backgroundColor: BRAND.COLORS.LEGAL_STRONG,
-  },
-  strengthModerate: {
-    backgroundColor: BRAND.COLORS.LEGAL_MODERATE,
-  },
-  strengthText: {
-    fontSize: BRAND.TYPOGRAPHY.SMALL_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.PEACE_WHITE,
-  },
-  
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  metricCard: {
-    width: '48%',
+    padding: 24,
+    borderWidth: 2,
+    borderColor: COLORS.ELECTRIC_GREEN,
     alignItems: 'center',
-    padding: BRAND.SPACING.MD,
-    backgroundColor: BRAND.COLORS.QUIET_SILVER,
-    borderRadius: BRAND.RADIUS.MEDIUM,
-    marginBottom: BRAND.SPACING.SM,
   },
-  metricIcon: {
-    fontSize: 24,
+  estimateTitle: {
+    fontSize: 16,
+    color: COLORS.SOFT_WHITE,
+    fontWeight: '600',
     marginBottom: 8,
   },
-  metricValue: {
-    fontSize: BRAND.TYPOGRAPHY.TITLE_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.TEXT_PRIMARY,
-    marginBottom: 4,
+  estimatePercent: {
+    fontSize: 56,
+    fontWeight: 'bold',
+    color: COLORS.ELECTRIC_GREEN,
   },
-  metricLabel: {
-    fontSize: BRAND.TYPOGRAPHY.CAPTION_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.SEMIBOLD,
-    color: BRAND.COLORS.TEXT_SECONDARY,
+  estimateConfidence: {
+    fontSize: 14,
+    color: COLORS.WARM_GREY,
+    marginTop: 4,
   },
-  metricSubtext: {
-    fontSize: BRAND.TYPOGRAPHY.SMALL_SIZE,
-    color: BRAND.COLORS.TEXT_DISABLED,
+  estimateMessage: {
+    fontSize: 14,
+    color: COLORS.SOFT_WHITE,
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 20,
   },
-  
-  potentialSavings: {
-    alignItems: 'center',
-    padding: BRAND.SPACING.LG,
-    backgroundColor: 'rgba(0, 200, 83, 0.1)',
-    borderRadius: BRAND.RADIUS.MEDIUM,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: BRAND.COLORS.JUSTICE_GREEN,
+  warningBox: {
+    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
   },
-  savingsTitle: {
-    fontSize: BRAND.TYPOGRAPHY.BODY_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.SEMIBOLD,
-    color: BRAND.COLORS.TEXT_PRIMARY,
-    marginBottom: 8,
+  warningText: {
+    fontSize: 12,
+    color: '#FFC107',
+    textAlign: 'center',
   },
-  savingsAmount: {
-    fontSize: BRAND.TYPOGRAPHY.HERO_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.JUSTICE_GREEN,
-  },
-  savingsAnnual: {
-    fontSize: BRAND.TYPOGRAPHY.BODY_SIZE,
-    color: BRAND.COLORS.TEXT_SECONDARY,
-  },
-  
-  recommendationBox: {
-    padding: BRAND.SPACING.MD,
-    backgroundColor: BRAND.COLORS.QUIET_SILVER,
-    borderRadius: BRAND.RADIUS.MEDIUM,
-    borderLeftWidth: 4,
-    borderLeftColor: BRAND.COLORS.EVIDENCE_GOLD,
-  },
-  recommendationTitle: {
-    fontSize: BRAND.TYPOGRAPHY.SUBTITLE_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.SEMIBOLD,
-    color: BRAND.COLORS.TEXT_PRIMARY,
-    marginBottom: 8,
-  },
-  recommendationText: {
-    fontSize: BRAND.TYPOGRAPHY.BODY_SIZE,
-    color: BRAND.COLORS.TEXT_SECONDARY,
-    marginBottom: 12,
-    lineHeight: 22,
-  },
-  confidenceBar: {
-    height: 8,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 4,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  confidenceFill: {
-    height: '100%',
-    backgroundColor: BRAND.COLORS.JUSTICE_GREEN,
-    borderRadius: 4,
-  },
-  confidenceText: {
-    fontSize: BRAND.TYPOGRAPHY.CAPTION_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.SEMIBOLD,
-    color: BRAND.COLORS.TEXT_SECONDARY,
-  },
-  
-  // Reports Section
-  reportsSection: {
-    padding: BRAND.SPACING.SCREEN_PADDING,
+
+  // Section Cards
+  sectionCard: {
+    backgroundColor: COLORS.SOFT_WHITE,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 20,
   },
   sectionTitle: {
-    fontSize: BRAND.TYPOGRAPHY.TITLE_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.TEXT_PRIMARY,
-    marginBottom: 20,
-  },
-  
-  reportCard: {
-    backgroundColor: BRAND.COLORS.BACKGROUND_CARD,
-    padding: BRAND.SPACING.LG,
-    borderRadius: BRAND.RADIUS.LARGE,
-    marginBottom: BRAND.SPACING.LG,
-    ...BRAND.SHADOWS.LIGHT,
-    position: 'relative',
-  },
-  reportCardHighlight: {
-    borderWidth: 2,
-    borderColor: BRAND.COLORS.EVIDENCE_GOLD,
-    ...BRAND.SHADOWS.STRONG,
-  },
-  
-  badge: {
-    position: 'absolute',
-    top: -8,
-    right: 16,
-    backgroundColor: BRAND.COLORS.EVIDENCE_GOLD,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    zIndex: 1,
-  },
-  badgeText: {
-    fontSize: BRAND.TYPOGRAPHY.SMALL_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.SILENCE_BLUE,
-  },
-  
-  reportHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.MIDNIGHT_BLUE,
     marginBottom: 16,
   },
-  reportTitleArea: {
-    flex: 1,
-    marginRight: 16,
-  },
-  reportTitle: {
-    fontSize: BRAND.TYPOGRAPHY.SUBTITLE_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.TEXT_PRIMARY,
-    marginBottom: 4,
-  },
-  reportSubtitle: {
-    fontSize: BRAND.TYPOGRAPHY.BODY_SIZE,
-    color: BRAND.COLORS.TEXT_SECONDARY,
-  },
-  reportPrice: {
-    fontSize: BRAND.TYPOGRAPHY.SUBTITLE_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.BOLD,
-    color: BRAND.COLORS.EVIDENCE_GOLD,
-  },
-  reportPriceIncluded: {
-    color: BRAND.COLORS.JUSTICE_GREEN,
-  },
-  
-  featuresList: {
-    marginBottom: 20,
-  },
-  featureItem: {
+
+  // Assessment
+  assessmentRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  assessmentLabel: {
+    fontSize: 14,
+    color: COLORS.WARM_GREY,
+  },
+  assessmentValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+    flex: 1,
+    textAlign: 'right',
+  },
+  textStrong: { color: '#E53935' },
+  textGood: { color: COLORS.ELECTRIC_GREEN },
+  textModerate: { color: '#FF9800' },
+
+  paragraphBox: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  paragraphTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
     marginBottom: 8,
   },
-  featureCheck: {
-    fontSize: 16,
-    marginRight: 12,
+  paragraphItem: {
+    fontSize: 12,
+    color: '#555',
+    marginBottom: 4,
+    lineHeight: 18,
   },
-  featureText: {
-    fontSize: BRAND.TYPOGRAPHY.BODY_SIZE,
-    color: BRAND.COLORS.TEXT_SECONDARY,
+
+  // Stats Grid
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statBox: {
+    alignItems: 'center',
+    padding: 12,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.MIDNIGHT_BLUE,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.WARM_GREY,
+    marginTop: 4,
+  },
+
+  // Rent Reduction
+  reductionBox: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(0, 230, 118, 0.08)',
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  reductionPercent: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: COLORS.ELECTRIC_GREEN,
+  },
+  reductionLabel: {
+    fontSize: 14,
+    color: COLORS.WARM_GREY,
+    marginTop: 4,
+  },
+  reductionAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+    marginTop: 8,
+  },
+
+  factorsBox: {
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  factorsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+    marginBottom: 8,
+  },
+  factorItem: {
+    fontSize: 12,
+    color: '#555',
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+
+  referencesBox: {
+    padding: 12,
+    backgroundColor: '#f0f0ff',
+    borderRadius: 8,
+  },
+  referencesTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+    marginBottom: 8,
+  },
+  referenceItem: {
+    fontSize: 12,
+    color: '#555',
+    marginBottom: 4,
+  },
+
+  // Evidence Quality
+  qualityScore: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+    marginBottom: 12,
+  },
+  criterionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  criterionIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  criterionText: {
+    fontSize: 13,
+    color: '#555',
     flex: 1,
   },
-  
-  reportButton: {
-    paddingVertical: BRAND.SPACING.MD,
-    paddingHorizontal: BRAND.SPACING.LG,
-    borderRadius: BRAND.RADIUS.MEDIUM,
+  criterionPoints: {
+    fontSize: 12,
+    color: COLORS.WARM_GREY,
+    fontWeight: '600',
+  },
+  qualityRecommendation: {
+    fontSize: 13,
+    color: COLORS.MIDNIGHT_BLUE,
+    fontStyle: 'italic',
+    marginTop: 12,
+    lineHeight: 18,
+  },
+
+  // Recommendations
+  recCard: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+  },
+  recCardHigh: {
+    borderLeftColor: '#E53935',
+    backgroundColor: '#fff5f5',
+  },
+  recCardMedium: {
+    borderLeftColor: '#FF9800',
+    backgroundColor: '#fff9f0',
+  },
+  recHeader: {
+    marginBottom: 8,
+  },
+  recPriority: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+  },
+  recAction: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+    marginBottom: 6,
+  },
+  recDetails: {
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 18,
+  },
+
+  // Court Decisions
+  decisionCard: {
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  decisionRef: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+  },
+  decisionDesc: {
+    fontSize: 12,
+    color: '#555',
+    marginTop: 4,
+  },
+  decisionReduction: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.ELECTRIC_GREEN,
+    marginTop: 6,
+  },
+
+  // Generate Button
+  generateSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     alignItems: 'center',
   },
-  reportButtonDefault: {
-    backgroundColor: BRAND.COLORS.SILENCE_BLUE,
+  generateButton: {
+    backgroundColor: COLORS.ELECTRIC_GREEN,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
   },
-  reportButtonHighlight: {
-    backgroundColor: BRAND.COLORS.EVIDENCE_GOLD,
-  },
-  reportButtonDisabled: {
+  generateButtonDisabled: {
     opacity: 0.6,
   },
-  reportButtonText: {
-    fontSize: BRAND.TYPOGRAPHY.BODY_SIZE,
-    fontWeight: BRAND.TYPOGRAPHY.SEMIBOLD,
-    color: BRAND.COLORS.PEACE_WHITE,
+  generateButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.MIDNIGHT_BLUE,
   },
-  reportButtonTextHighlight: {
-    color: BRAND.COLORS.SILENCE_BLUE,
-  },
-  
-  legalNote: {
-    padding: BRAND.SPACING.SCREEN_PADDING,
-    paddingTop: 0,
-  },
-  legalNoteText: {
-    fontSize: BRAND.TYPOGRAPHY.SMALL_SIZE,
-    color: BRAND.COLORS.TEXT_DISABLED,
+  generateHint: {
+    fontSize: 12,
+    color: COLORS.WARM_GREY,
+    marginTop: 8,
     textAlign: 'center',
-    lineHeight: 18,
+  },
+
+  // Disclaimer
+  disclaimer: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  disclaimerText: {
+    fontSize: 11,
+    color: COLORS.WARM_GREY,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });

@@ -1,3 +1,17 @@
+/**
+ * DatabaseService V3.0 - Full Supabase Integration
+ * Punkt 6: Datenbank Integration - Supabase für Lärm-Logs
+ * 
+ * FEATURES:
+ * - Platform-aware: SQLite (native offline) + Supabase (cloud sync)
+ * - Auto-sync when online
+ * - Daily summaries for 14-day protocol
+ * - Legal scoring integration
+ * - DSGVO compliant with RLS
+ * 
+ * @version 3.0
+ */
+
 import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
@@ -8,6 +22,7 @@ if (Platform.OS !== 'web') {
   SQLite = require('expo-sqlite');
 }
 
+// Supabase Client initialisieren
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -21,33 +36,81 @@ class DatabaseService {
     this.db = null;
     this.useLocalDB = Platform.OS !== 'web' && SQLite !== null;
     this.memoryCache = []; // Web fallback
+    this.sessionCache = []; // Monitoring sessions
+    this.syncQueue = []; // Offline sync queue
+    this.isSyncing = false;
     this._initPromise = this.initializeLocalDB();
   }
+
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
 
   async initializeLocalDB() {
     if (this.useLocalDB) {
       this.db = await SQLite.openDatabaseAsync('silencenow.db');
 
+      // Extended schema with legal fields
       await this.db.execAsync(`
         CREATE TABLE IF NOT EXISTS noise_events (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           timestamp TEXT NOT NULL,
           decibel REAL NOT NULL,
-          duration INTEGER,
-          freq_bass REAL,
-          freq_low_mid REAL,
-          freq_mid REAL,
-          freq_high_mid REAL,
-          freq_high REAL,
+          duration INTEGER DEFAULT 0,
+          freq_bass REAL DEFAULT 0,
+          freq_low_mid REAL DEFAULT 0,
+          freq_mid REAL DEFAULT 0,
+          freq_high_mid REAL DEFAULT 0,
+          freq_high REAL DEFAULT 0,
           classification TEXT DEFAULT 'Loud',
+          detailed_type TEXT,
+          likely_source TEXT,
+          legal_relevance TEXT DEFAULT 'low',
+          legal_score INTEGER DEFAULT 0,
+          is_nighttime_violation INTEGER DEFAULT 0,
+          time_context TEXT,
+          health_impact TEXT DEFAULT 'low',
+          duration_impact TEXT DEFAULT 'brief',
+          synced INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS monitoring_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          started_at TEXT NOT NULL,
+          ended_at TEXT,
+          total_measurements INTEGER DEFAULT 0,
+          event_count INTEGER DEFAULT 0,
+          avg_decibel REAL DEFAULT 0,
+          peak_decibel REAL DEFAULT 0,
+          background_noise REAL,
+          legal_impact_score INTEGER DEFAULT 0,
+          recommendations TEXT DEFAULT '[]',
+          synced INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS daily_summaries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          summary_date TEXT NOT NULL UNIQUE,
+          total_events INTEGER DEFAULT 0,
+          total_monitoring_minutes INTEGER DEFAULT 0,
+          avg_decibel REAL DEFAULT 0,
+          peak_decibel REAL DEFAULT 0,
+          night_events INTEGER DEFAULT 0,
+          night_avg_decibel REAL DEFAULT 0,
+          day_events INTEGER DEFAULT 0,
+          day_avg_decibel REAL DEFAULT 0,
+          daily_legal_score INTEGER DEFAULT 0,
+          hourly_breakdown TEXT DEFAULT '{}',
           synced INTEGER DEFAULT 0,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
-      console.log('Local SQLite database initialized');
+      console.log('[DB] Local SQLite database initialized with extended schema');
     } else {
-      console.log('Web platform detected - using memory cache + Supabase only');
+      console.log('[DB] Web platform - using memory cache + Supabase');
     }
   }
 
@@ -55,91 +118,158 @@ class DatabaseService {
     await this._initPromise;
   }
 
+  // ============================================================
+  // NOISE EVENTS - INSERT
+  // ============================================================
+
   async insertEvent(event) {
     await this._ensureReady();
     
+    // Compute legal fields
+    const legalData = this._computeLegalFields(event);
+    const enrichedEvent = { ...event, ...legalData };
+    
     if (this.useLocalDB) {
-      // Native: SQLite
-      try {
-        const result = await this.db.runAsync(
-          `INSERT INTO noise_events 
-          (timestamp, decibel, duration, freq_bass, freq_low_mid, freq_mid, freq_high_mid, freq_high, classification) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            event.timestamp,
-            event.decibel,
-            event.duration || 0,
-            event.freqBands.bass,
-            event.freqBands.lowMid,
-            event.freqBands.mid,
-            event.freqBands.highMid,
-            event.freqBands.high,
-            event.classification,
-          ]
-        );
-
-        console.log('Event inserted to SQLite:', result.lastInsertRowId);
-        return result.lastInsertRowId;
-      } catch (error) {
-        console.error('Error inserting to SQLite:', error);
-        return null;
-      }
+      return this._insertEventSQLite(enrichedEvent);
     } else {
-      // Web: Memory cache + direct Supabase
-      const eventWithId = {
-        id: Date.now(),
-        ...event,
-        synced: 0,
-        created_at: new Date().toISOString()
-      };
-      
-      this.memoryCache.push(eventWithId);
-      console.log('Event cached for web:', eventWithId.id);
-      
-      // Direkt zu Supabase syncen
-      await this.syncToSupabase();
-      return eventWithId.id;
+      return this._insertEventWeb(enrichedEvent);
     }
   }
 
-  async getAllEvents() {
+  async _insertEventSQLite(event) {
+    try {
+      const result = await this.db.runAsync(
+        `INSERT INTO noise_events 
+        (timestamp, decibel, duration, freq_bass, freq_low_mid, freq_mid, freq_high_mid, freq_high,
+         classification, detailed_type, likely_source, legal_relevance, legal_score,
+         is_nighttime_violation, time_context, health_impact, duration_impact) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          event.timestamp,
+          event.decibel,
+          event.duration || 0,
+          event.freqBands?.bass || 0,
+          event.freqBands?.lowMid || 0,
+          event.freqBands?.mid || 0,
+          event.freqBands?.highMid || 0,
+          event.freqBands?.high || 0,
+          event.classification || 'Loud',
+          event.detailedType || null,
+          event.likelySource || null,
+          event.legalRelevance || 'low',
+          event.legalScore || 0,
+          event.isNighttimeViolation ? 1 : 0,
+          event.timeContext || null,
+          event.healthImpact || 'low',
+          event.durationImpact || 'brief'
+        ]
+      );
+
+      console.log('[DB] Event inserted to SQLite:', result.lastInsertRowId);
+      
+      // Update local daily summary
+      await this._updateLocalDailySummary(event);
+      
+      // Queue for Supabase sync
+      this.syncQueue.push({ type: 'event', data: event });
+      this._trySync();
+      
+      return result.lastInsertRowId;
+    } catch (error) {
+      console.error('[DB] SQLite insert error:', error);
+      return null;
+    }
+  }
+
+  async _insertEventWeb(event) {
+    const eventWithId = {
+      id: Date.now(),
+      ...event,
+      synced: 0,
+      created_at: new Date().toISOString()
+    };
+    
+    this.memoryCache.push(eventWithId);
+    
+    // Direct Supabase insert for web
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('noise_events')
+          .insert({
+            timestamp: event.timestamp,
+            decibel: event.decibel,
+            duration: event.duration || 0,
+            freq_bass: event.freqBands?.bass || 0,
+            freq_low_mid: event.freqBands?.lowMid || 0,
+            freq_mid: event.freqBands?.mid || 0,
+            freq_high_mid: event.freqBands?.highMid || 0,
+            freq_high: event.freqBands?.high || 0,
+            classification: event.classification || 'Loud',
+            detailed_type: event.detailedType,
+            likely_source: event.likelySource,
+            legal_relevance: event.legalRelevance || 'low',
+            legal_score: event.legalScore || 0,
+            is_nighttime_violation: event.isNighttimeViolation || false,
+            time_context: event.timeContext,
+            health_impact: event.healthImpact || 'low',
+            duration_impact: event.durationImpact || 'brief'
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        eventWithId.synced = 1;
+        console.log('[DB] Event inserted to Supabase:', data?.id);
+      } catch (error) {
+        console.error('[DB] Supabase insert error:', error);
+      }
+    }
+    
+    return eventWithId.id;
+  }
+
+  // ============================================================
+  // NOISE EVENTS - QUERY
+  // ============================================================
+
+  async getAllEvents(limit = 50) {
     await this._ensureReady();
     
     if (this.useLocalDB) {
       try {
-        const result = await this.db.getAllAsync(
-          'SELECT * FROM noise_events ORDER BY timestamp DESC'
+        return await this.db.getAllAsync(
+          'SELECT * FROM noise_events ORDER BY timestamp DESC LIMIT ?',
+          [limit]
         );
-        return result;
       } catch (error) {
-        console.error('Error fetching from SQLite:', error);
+        console.error('[DB] SQLite getAllEvents error:', error);
         return [];
       }
     } else {
-      // Web: Return memory cache + fetch from Supabase
       if (supabase) {
         try {
           const { data, error } = await supabase
             .from('noise_events')
             .select('*')
-            .order('timestamp', { ascending: false });
+            .order('timestamp', { ascending: false })
+            .limit(limit);
           
           if (error) throw error;
           return data || [];
         } catch (error) {
-          console.error('Error fetching from Supabase:', error);
+          console.error('[DB] Supabase getAllEvents error:', error);
         }
       }
-      
-      return this.memoryCache.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      return this.memoryCache
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, limit);
     }
   }
 
   async getEventsCount(days = 14) {
     await this._ensureReady();
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    const cutoff = cutoffDate.toISOString();
+    const cutoff = this._getCutoffDate(days);
 
     if (this.useLocalDB) {
       try {
@@ -149,20 +279,29 @@ class DatabaseService {
         );
         return result?.count || 0;
       } catch (error) {
-        console.error('Error counting SQLite events:', error);
+        console.error('[DB] SQLite count error:', error);
         return 0;
       }
     } else {
-      const events = await this.getAllEvents();
-      return events.filter(e => e.timestamp > cutoff).length;
+      if (supabase) {
+        try {
+          const { count, error } = await supabase
+            .from('noise_events')
+            .select('*', { count: 'exact', head: true })
+            .gte('timestamp', cutoff);
+          if (error) throw error;
+          return count || 0;
+        } catch (error) {
+          console.error('[DB] Supabase count error:', error);
+        }
+      }
+      return this.memoryCache.filter(e => e.timestamp > cutoff).length;
     }
   }
 
   async getAverageDecibel(days = 14) {
     await this._ensureReady();
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    const cutoff = cutoffDate.toISOString();
+    const cutoff = this._getCutoffDate(days);
 
     if (this.useLocalDB) {
       try {
@@ -172,24 +311,375 @@ class DatabaseService {
         );
         return result?.avg || 0;
       } catch (error) {
-        console.error('Error calculating SQLite average:', error);
+        console.error('[DB] SQLite avg error:', error);
         return 0;
       }
     } else {
-      const events = await this.getAllEvents();
-      const recentEvents = events.filter(e => e.timestamp > cutoff);
-      if (recentEvents.length === 0) return 0;
-      
-      const sum = recentEvents.reduce((acc, e) => acc + e.decibel, 0);
-      return sum / recentEvents.length;
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('noise_events')
+            .select('decibel')
+            .gte('timestamp', cutoff);
+          if (error) throw error;
+          if (!data || data.length === 0) return 0;
+          return data.reduce((sum, e) => sum + e.decibel, 0) / data.length;
+        } catch (error) {
+          console.error('[DB] Supabase avg error:', error);
+        }
+      }
+      const events = this.memoryCache.filter(e => e.timestamp > cutoff);
+      if (events.length === 0) return 0;
+      return events.reduce((sum, e) => sum + e.decibel, 0) / events.length;
     }
   }
 
-  async syncToSupabase() {
-    if (!supabase) {
-      console.log('Supabase not configured, skipping sync');
-      return;
+  async getEventsByTimeRange(startDate, endDate) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          'SELECT * FROM noise_events WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp DESC',
+          [startDate, endDate]
+        );
+      } catch (error) {
+        console.error('[DB] SQLite time range error:', error);
+        return [];
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('noise_events')
+            .select('*')
+            .gte('timestamp', startDate)
+            .lte('timestamp', endDate)
+            .order('timestamp', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        } catch (error) {
+          console.error('[DB] Supabase time range error:', error);
+        }
+      }
+      return this.memoryCache.filter(e => e.timestamp >= startDate && e.timestamp <= endDate);
     }
+  }
+
+  async getNightViolations(days = 14) {
+    await this._ensureReady();
+    const cutoff = this._getCutoffDate(days);
+
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          'SELECT * FROM noise_events WHERE is_nighttime_violation = 1 AND timestamp > ? ORDER BY timestamp DESC',
+          [cutoff]
+        );
+      } catch (error) {
+        console.error('[DB] SQLite night violations error:', error);
+        return [];
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('noise_events')
+            .select('*')
+            .eq('is_nighttime_violation', true)
+            .gte('timestamp', cutoff)
+            .order('timestamp', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        } catch (error) {
+          console.error('[DB] Supabase night violations error:', error);
+        }
+      }
+      return this.memoryCache.filter(e => e.isNighttimeViolation && e.timestamp > cutoff);
+    }
+  }
+
+  async getHighSeverityEvents(days = 14, minScore = 60) {
+    await this._ensureReady();
+    const cutoff = this._getCutoffDate(days);
+
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          'SELECT * FROM noise_events WHERE legal_score >= ? AND timestamp > ? ORDER BY legal_score DESC',
+          [minScore, cutoff]
+        );
+      } catch (error) {
+        console.error('[DB] SQLite high severity error:', error);
+        return [];
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('noise_events')
+            .select('*')
+            .gte('legal_score', minScore)
+            .gte('timestamp', cutoff)
+            .order('legal_score', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        } catch (error) {
+          console.error('[DB] Supabase high severity error:', error);
+        }
+      }
+      return this.memoryCache.filter(e => (e.legalScore || 0) >= minScore && e.timestamp > cutoff);
+    }
+  }
+
+  // ============================================================
+  // MONITORING SESSIONS
+  // ============================================================
+
+  async saveSession(sessionData) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        const result = await this.db.runAsync(
+          `INSERT INTO monitoring_sessions 
+          (started_at, ended_at, total_measurements, event_count, avg_decibel, peak_decibel,
+           background_noise, legal_impact_score, recommendations) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            sessionData.startedAt,
+            sessionData.endedAt || new Date().toISOString(),
+            sessionData.totalMeasurements || 0,
+            sessionData.eventCount || 0,
+            sessionData.avgDecibel || 0,
+            sessionData.peakDecibel || 0,
+            sessionData.backgroundNoise || null,
+            sessionData.legalImpactScore || 0,
+            JSON.stringify(sessionData.recommendations || [])
+          ]
+        );
+        console.log('[DB] Session saved to SQLite:', result.lastInsertRowId);
+        return result.lastInsertRowId;
+      } catch (error) {
+        console.error('[DB] SQLite session save error:', error);
+        return null;
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('monitoring_sessions')
+            .insert({
+              started_at: sessionData.startedAt,
+              ended_at: sessionData.endedAt || new Date().toISOString(),
+              total_measurements: sessionData.totalMeasurements || 0,
+              event_count: sessionData.eventCount || 0,
+              avg_decibel: sessionData.avgDecibel || 0,
+              peak_decibel: sessionData.peakDecibel || 0,
+              background_noise: sessionData.backgroundNoise,
+              legal_impact_score: sessionData.legalImpactScore || 0,
+              recommendations: sessionData.recommendations || []
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          console.log('[DB] Session saved to Supabase:', data?.id);
+          return data?.id;
+        } catch (error) {
+          console.error('[DB] Supabase session save error:', error);
+        }
+      }
+      this.sessionCache.push({ id: Date.now(), ...sessionData });
+      return Date.now();
+    }
+  }
+
+  async getSessions(limit = 20) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          'SELECT * FROM monitoring_sessions ORDER BY started_at DESC LIMIT ?',
+          [limit]
+        );
+      } catch (error) {
+        console.error('[DB] SQLite sessions error:', error);
+        return [];
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('monitoring_sessions')
+            .select('*')
+            .order('started_at', { ascending: false })
+            .limit(limit);
+          if (error) throw error;
+          return data || [];
+        } catch (error) {
+          console.error('[DB] Supabase sessions error:', error);
+        }
+      }
+      return this.sessionCache.slice(-limit);
+    }
+  }
+
+  // ============================================================
+  // DAILY SUMMARIES - 14-DAY PROTOCOL
+  // ============================================================
+
+  async getDailySummaries(days = 14) {
+    await this._ensureReady();
+    const cutoff = this._getCutoffDate(days);
+
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          'SELECT * FROM daily_summaries WHERE summary_date >= ? ORDER BY summary_date DESC',
+          [cutoff.split('T')[0]]
+        );
+      } catch (error) {
+        console.error('[DB] SQLite daily summaries error:', error);
+        return [];
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('daily_summaries')
+            .select('*')
+            .gte('summary_date', cutoff.split('T')[0])
+            .order('summary_date', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        } catch (error) {
+          console.error('[DB] Supabase daily summaries error:', error);
+        }
+      }
+      return [];
+    }
+  }
+
+  async _updateLocalDailySummary(event) {
+    if (!this.useLocalDB) return;
+    
+    try {
+      const eventDate = new Date(event.timestamp).toISOString().split('T')[0];
+      const hour = new Date(event.timestamp).getHours();
+      const isNight = hour >= 22 || hour < 6;
+      
+      // Check if summary exists
+      const existing = await this.db.getFirstAsync(
+        'SELECT * FROM daily_summaries WHERE summary_date = ?',
+        [eventDate]
+      );
+      
+      if (existing) {
+        await this.db.runAsync(
+          `UPDATE daily_summaries SET
+            total_events = total_events + 1,
+            avg_decibel = (avg_decibel * total_events + ?) / (total_events + 1),
+            peak_decibel = MAX(peak_decibel, ?),
+            night_events = night_events + ?,
+            day_events = day_events + ?,
+            daily_legal_score = MAX(daily_legal_score, ?)
+          WHERE summary_date = ?`,
+          [
+            event.decibel,
+            event.decibel,
+            isNight ? 1 : 0,
+            isNight ? 0 : 1,
+            event.legalScore || 0,
+            eventDate
+          ]
+        );
+      } else {
+        await this.db.runAsync(
+          `INSERT INTO daily_summaries (summary_date, total_events, avg_decibel, peak_decibel,
+            night_events, day_events, daily_legal_score)
+          VALUES (?, 1, ?, ?, ?, ?, ?)`,
+          [
+            eventDate,
+            event.decibel,
+            event.decibel,
+            isNight ? 1 : 0,
+            isNight ? 0 : 1,
+            event.legalScore || 0
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('[DB] Local daily summary update error:', error);
+    }
+  }
+
+  // ============================================================
+  // LEGAL ANALYSIS QUERIES
+  // ============================================================
+
+  async getLegalSummary(days = 14) {
+    await this._ensureReady();
+    const cutoff = this._getCutoffDate(days);
+
+    try {
+      const totalEvents = await this.getEventsCount(days);
+      const avgDecibel = await this.getAverageDecibel(days);
+      const nightViolations = await this.getNightViolations(days);
+      const highSeverity = await this.getHighSeverityEvents(days);
+      
+      // Calculate overall legal position
+      let legalStrength = 'weak';
+      let rentReductionEstimate = 0;
+      
+      if (nightViolations.length > 5 && highSeverity.length > 3) {
+        legalStrength = 'very_strong';
+        rentReductionEstimate = 25; // 25% Mietminderung
+      } else if (nightViolations.length > 3 || highSeverity.length > 5) {
+        legalStrength = 'strong';
+        rentReductionEstimate = 15;
+      } else if (totalEvents > 10) {
+        legalStrength = 'moderate';
+        rentReductionEstimate = 10;
+      } else if (totalEvents > 3) {
+        legalStrength = 'developing';
+        rentReductionEstimate = 5;
+      }
+      
+      return {
+        period: `${days} days`,
+        totalEvents,
+        avgDecibel: Math.round(avgDecibel * 10) / 10,
+        nightViolations: nightViolations.length,
+        highSeverityEvents: highSeverity.length,
+        legalStrength,
+        rentReductionPercent: rentReductionEstimate,
+        recommendation: this._getLegalRecommendation(legalStrength, nightViolations.length),
+        dailySummaries: await this.getDailySummaries(days)
+      };
+    } catch (error) {
+      console.error('[DB] Legal summary error:', error);
+      return {
+        period: `${days} days`,
+        totalEvents: 0,
+        avgDecibel: 0,
+        nightViolations: 0,
+        highSeverityEvents: 0,
+        legalStrength: 'insufficient_data',
+        rentReductionPercent: 0,
+        recommendation: 'Continue monitoring to build evidence.',
+        dailySummaries: []
+      };
+    }
+  }
+
+  // ============================================================
+  // SUPABASE SYNC
+  // ============================================================
+
+  async syncToSupabase() {
+    if (!supabase || this.isSyncing) return;
+    this.isSyncing = true;
 
     try {
       await this._ensureReady();
@@ -197,49 +687,114 @@ class DatabaseService {
 
       if (this.useLocalDB) {
         unsyncedEvents = await this.db.getAllAsync(
-          'SELECT * FROM noise_events WHERE synced = 0'
+          'SELECT * FROM noise_events WHERE synced = 0 LIMIT 100'
         );
       } else {
         unsyncedEvents = this.memoryCache.filter(e => e.synced === 0);
       }
 
       if (unsyncedEvents.length === 0) {
-        console.log('No events to sync');
+        this.isSyncing = false;
         return;
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('noise_events')
         .insert(unsyncedEvents.map(event => ({
           timestamp: event.timestamp,
           decibel: event.decibel,
           duration: event.duration,
-          freq_bands: {
-            bass: event.freq_bass || event.freqBands?.bass,
-            lowMid: event.freq_low_mid || event.freqBands?.lowMid,
-            mid: event.freq_mid || event.freqBands?.mid,
-            highMid: event.freq_high_mid || event.freqBands?.highMid,
-            high: event.freq_high || event.freqBands?.high,
-          },
+          freq_bass: event.freq_bass || event.freqBands?.bass || 0,
+          freq_low_mid: event.freq_low_mid || event.freqBands?.lowMid || 0,
+          freq_mid: event.freq_mid || event.freqBands?.mid || 0,
+          freq_high_mid: event.freq_high_mid || event.freqBands?.highMid || 0,
+          freq_high: event.freq_high || event.freqBands?.high || 0,
           classification: event.classification,
+          detailed_type: event.detailed_type || event.detailedType,
+          likely_source: event.likely_source || event.likelySource,
+          legal_relevance: event.legal_relevance || event.legalRelevance || 'low',
+          legal_score: event.legal_score || event.legalScore || 0,
+          is_nighttime_violation: Boolean(event.is_nighttime_violation || event.isNighttimeViolation),
+          time_context: event.time_context || event.timeContext,
+          health_impact: event.health_impact || event.healthImpact || 'low',
+          duration_impact: event.duration_impact || event.durationImpact || 'brief'
         })));
 
       if (error) throw error;
 
       // Mark as synced
       if (this.useLocalDB) {
-        await this.db.runAsync(
-          'UPDATE noise_events SET synced = 1 WHERE synced = 0'
-        );
+        await this.db.runAsync('UPDATE noise_events SET synced = 1 WHERE synced = 0');
       } else {
         this.memoryCache.forEach(e => e.synced = 1);
       }
 
-      console.log(`Synced ${unsyncedEvents.length} events to Supabase`);
+      console.log(`[DB] Synced ${unsyncedEvents.length} events to Supabase`);
     } catch (error) {
-      console.error('Sync error:', error);
+      console.error('[DB] Sync error:', error);
+    } finally {
+      this.isSyncing = false;
     }
   }
+
+  _trySync() {
+    // Debounced sync - wait 10 seconds after last event
+    if (this._syncTimeout) clearTimeout(this._syncTimeout);
+    this._syncTimeout = setTimeout(() => this.syncToSupabase(), 10000);
+  }
+
+  // ============================================================
+  // USER SETTINGS
+  // ============================================================
+
+  async getUserSettings() {
+    if (!supabase) return this._getDefaultSettings();
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return this._getDefaultSettings();
+      
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data || this._getDefaultSettings();
+    } catch (error) {
+      console.error('[DB] Get settings error:', error);
+      return this._getDefaultSettings();
+    }
+  }
+
+  async saveUserSettings(settings) {
+    if (!supabase) return false;
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          id: user.id,
+          ...settings,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) throw error;
+      console.log('[DB] Settings saved');
+      return true;
+    } catch (error) {
+      console.error('[DB] Save settings error:', error);
+      return false;
+    }
+  }
+
+  // ============================================================
+  // DELETE / CLEANUP
+  // ============================================================
 
   async deleteAllEvents() {
     await this._ensureReady();
@@ -247,14 +802,111 @@ class DatabaseService {
     if (this.useLocalDB) {
       try {
         await this.db.runAsync('DELETE FROM noise_events');
-        console.log('All SQLite events deleted');
+        await this.db.runAsync('DELETE FROM daily_summaries');
+        console.log('[DB] All local data deleted');
       } catch (error) {
-        console.error('Error deleting SQLite events:', error);
+        console.error('[DB] Delete error:', error);
       }
     } else {
       this.memoryCache = [];
-      console.log('Memory cache cleared');
     }
+    
+    // Also delete from Supabase
+    if (supabase) {
+      try {
+        await supabase.from('noise_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('daily_summaries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        console.log('[DB] Supabase data deleted');
+      } catch (error) {
+        console.error('[DB] Supabase delete error:', error);
+      }
+    }
+  }
+
+  // ============================================================
+  // HELPER METHODS
+  // ============================================================
+
+  _computeLegalFields(event) {
+    const hour = new Date(event.timestamp).getHours();
+    const isNight = hour >= 22 || hour < 6;
+    const isEvening = hour >= 19 || hour < 7;
+    
+    let legalScore = 0;
+    
+    // Decibel scoring
+    if (event.decibel > 85) legalScore += 40;
+    else if (event.decibel > 70) legalScore += 30;
+    else if (event.decibel > 60) legalScore += 20;
+    else if (event.decibel > 50) legalScore += 10;
+    
+    // Time scoring
+    if (isNight) legalScore += 30;
+    else if (isEvening) legalScore += 20;
+    else legalScore += 10;
+    
+    // Duration scoring
+    const duration = event.duration || 0;
+    if (duration > 300) legalScore += 20;
+    else if (duration > 60) legalScore += 15;
+    else if (duration > 30) legalScore += 10;
+    else legalScore += 5;
+    
+    return {
+      legalScore: Math.min(100, legalScore),
+      isNighttimeViolation: isNight,
+      timeContext: isNight ? 'night_hours' : (isEvening ? 'evening_hours' : 'day_hours'),
+      legalRelevance: legalScore > 70 ? 'very_high' : legalScore > 50 ? 'high' : legalScore > 30 ? 'medium' : 'low',
+      healthImpact: event.decibel > 85 ? 'high' : event.decibel > 70 ? 'medium' : 'low',
+      durationImpact: duration > 300 ? 'prolonged' : duration > 60 ? 'sustained' : 'brief'
+    };
+  }
+
+  _getLegalRecommendation(strength, nightViolations) {
+    switch (strength) {
+      case 'very_strong':
+        return `Starke Rechtsposition! ${nightViolations} Nachtruhestörungen dokumentiert. Mietminderung nach §536 BGB empfohlen. Kontaktieren Sie einen Anwalt.`;
+      case 'strong':
+        return `Gute Beweislage mit ${nightViolations} Nachtruhestörungen. Formelle Beschwerde beim Vermieter empfohlen.`;
+      case 'moderate':
+        return 'Mäßige Beweislage. Weiter dokumentieren für stärkere Position.';
+      case 'developing':
+        return 'Beweissammlung beginnt. Mindestens 14 Tage durchgehend dokumentieren.';
+      default:
+        return 'Monitoring starten um Beweise zu sammeln. §536 BGB erfordert nachweisbare Lärmbelästigung.';
+    }
+  }
+
+  _getDefaultSettings() {
+    return {
+      noise_threshold: 55,
+      auto_start_monitoring: false,
+      background_monitoring: true,
+      notify_on_event: true,
+      notify_daily_summary: true,
+      monthly_rent: null,
+      apartment_address: null
+    };
+  }
+
+  _getCutoffDate(days) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return cutoff.toISOString();
+  }
+
+  /**
+   * Get Supabase client for direct access
+   */
+  getSupabaseClient() {
+    return supabase;
+  }
+
+  /**
+   * Check if Supabase is connected
+   */
+  isSupabaseConnected() {
+    return supabase !== null;
   }
 }
 
