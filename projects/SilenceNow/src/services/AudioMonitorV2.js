@@ -92,7 +92,7 @@ class AudioMonitorV2 {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         staysActiveInBackground: true,
-        playsInSilentModeIOS: false,
+        playsInSilentModeIOS: true,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false
       });
