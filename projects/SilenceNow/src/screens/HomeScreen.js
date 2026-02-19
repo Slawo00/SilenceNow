@@ -14,6 +14,7 @@ import AudioMonitor from '../services/AudioMonitorV2';
 import EventDetector from '../services/EventDetector';
 import NoiseRecordingService from '../services/NoiseRecordingService';
 import DatabaseService from '../services/DatabaseService';
+import NotificationService from '../services/NotificationService';
 import LiveMeter from '../components/LiveMeter';
 import EventCard from '../components/EventCard';
 
@@ -31,6 +32,11 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadData();
+
+    // Initialize notifications
+    NotificationService.initialize().catch(err => 
+      console.warn('Notifications init failed:', err.message)
+    );
 
     EventDetector.setOnEventSaved(() => {
       loadData();
@@ -128,10 +134,10 @@ export default function HomeScreen({ navigation }) {
 
   const estimateRentReduction = () => {
     const eventsPerWeek = stats.totalEvents / 2;
-    if (eventsPerWeek >= 10) return '180\u20AC/month';
-    if (eventsPerWeek >= 5) return '90-180\u20AC/month';
-    if (eventsPerWeek >= 2) return '45-90\u20AC/month';
-    return 'Insufficient data';
+    if (eventsPerWeek >= 10) return '180€/Monat';
+    if (eventsPerWeek >= 5) return '90-180€/Monat';
+    if (eventsPerWeek >= 2) return '45-90€/Monat';
+    return 'Noch nicht genug Daten';
   };
 
   return (
@@ -151,42 +157,42 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.statusCard}>
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>
-            Monitoring: {isMonitoring ? '● Active' : '○ Paused'}
+            Monitoring: {isMonitoring ? '● Aktiv' : '○ Pausiert'}
           </Text>
           <TouchableOpacity
             style={[styles.toggleButton, isMonitoring && styles.toggleButtonActive]}
             onPress={toggleMonitoring}
           >
             <Text style={styles.toggleButtonText}>
-              {isMonitoring ? 'Pause' : 'Start'}
+              {isMonitoring ? 'Stopp' : 'Start'}
             </Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.statusSubtext}>
           {isMonitoring
-            ? 'Monitoring since: Just now'
-            : 'Tap Start to begin monitoring'}
+            ? 'Überwachung läuft – Lärmereignisse werden automatisch erkannt'
+            : 'Tippe Start um die Lärmüberwachung zu beginnen'}
         </Text>
       </View>
 
       {isMonitoring && <LiveMeter decibel={currentDecibel} />}
 
       <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>14-Day Summary</Text>
+        <Text style={styles.statsTitle}>14-Tage Zusammenfassung</Text>
 
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.totalEvents}</Text>
-            <Text style={styles.statLabel}>Events</Text>
+            <Text style={styles.statLabel}>Ereignisse</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.avgDecibel} dB</Text>
-            <Text style={styles.statLabel}>Avg Level</Text>
+            <Text style={styles.statLabel}>Ø Pegel</Text>
           </View>
         </View>
 
         <View style={styles.estimateBox}>
-          <Text style={styles.estimateLabel}>Estimated Rent Reduction:</Text>
+          <Text style={styles.estimateLabel}>Geschätzte Mietminderung:</Text>
           <Text style={styles.estimateValue}>{estimateRentReduction()}</Text>
         </View>
 
@@ -199,15 +205,15 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.eventsSection}>
-        <Text style={styles.sectionTitle}>Recent Events</Text>
+        <Text style={styles.sectionTitle}>Letzte Ereignisse</Text>
         {events.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🔇</Text>
-            <Text style={styles.emptyText}>No events yet</Text>
+            <Text style={styles.emptyText}>Noch keine Ereignisse</Text>
             <Text style={styles.emptySubtext}>
               {isMonitoring
-                ? 'Monitoring is active. Events will appear here.'
-                : 'Start monitoring to detect noise events.'}
+                ? 'Überwachung aktiv. Ereignisse erscheinen hier automatisch.'
+                : 'Starte die Überwachung um Lärmereignisse zu erkennen.'}
             </Text>
           </View>
         ) : (

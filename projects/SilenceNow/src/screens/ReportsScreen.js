@@ -273,7 +273,7 @@ export default function ReportsScreen({ navigation }) {
         </>
       )}
 
-      {/* Generate PDF Button */}
+      {/* Action Buttons */}
       <View style={styles.generateSection}>
         <TouchableOpacity
           style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
@@ -288,6 +288,16 @@ export default function ReportsScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={styles.generateHint}>
           Erstellt ein gerichtsfestes 14-Tage Lärmprotokoll als PDF
+        </Text>
+
+        <TouchableOpacity
+          style={styles.lettersButton}
+          onPress={() => navigation.navigate('Letters')}
+        >
+          <Text style={styles.lettersButtonText}>📋 Musterbriefe generieren</Text>
+        </TouchableOpacity>
+        <Text style={styles.generateHint}>
+          Mängelanzeige, Mietminderung, Ordnungsamt-Beschwerde
         </Text>
       </View>
 
@@ -646,7 +656,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.WARM_GREY,
     marginTop: 8,
+    marginBottom: 16,
     textAlign: 'center',
+  },
+  lettersButton: {
+    backgroundColor: 'rgba(248, 249, 250, 0.15)',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.ELECTRIC_GREEN,
+  },
+  lettersButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.ELECTRIC_GREEN,
   },
 
   // Disclaimer

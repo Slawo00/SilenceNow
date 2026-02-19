@@ -1,6 +1,7 @@
 import { DEFAULTS } from '../utils/constants';
 import { isBassDominant, classifyNoiseAI } from '../utils/calculations';
 import DatabaseService from './DatabaseService';
+import NotificationService from './NotificationService';
 
 class EventDetector {
   constructor() {
@@ -148,6 +149,17 @@ class EventDetector {
 
     await DatabaseService.insertEvent(event);
     console.log('Event saved:', event.classification, event.decibel, 'dB,', event.duration, 's');
+
+    // Send push notification for the event
+    try {
+      await NotificationService.sendNoiseAlert({
+        decibel: event.decibel,
+        classification: event.aiType || event.classification,
+        legalScore: event.legalScore || 0,
+      });
+    } catch (notifError) {
+      console.warn('Notification failed (non-critical):', notifError.message);
+    }
 
     if (this.onEventSaved) {
       this.onEventSaved(event);

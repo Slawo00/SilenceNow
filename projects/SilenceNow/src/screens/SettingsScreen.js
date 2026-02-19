@@ -5,21 +5,23 @@ import DatabaseService from '../services/DatabaseService';
 
 export default function SettingsScreen({ navigation }) {
   const [threshold, setThreshold] = useState(DEFAULTS.THRESHOLD_DB);
-  const [notifications, setNotifications] = useState(true);
-  const [nightMode, setNightMode] = useState(false);
+  const [noiseAlerts, setNoiseAlerts] = useState(true);
+  const [dailySummary, setDailySummary] = useState(true);
+  const [nightModeOnly, setNightModeOnly] = useState(false);
+  const [backgroundMonitoring, setBackgroundMonitoring] = useState(true);
 
   const handleDeleteAllData = () => {
     Alert.alert(
-      'Delete All Data',
-      'This will permanently delete all recorded events. This action cannot be undone.',
+      'Alle Daten löschen',
+      'Dies löscht alle aufgezeichneten Events unwiderruflich. Diese Aktion kann nicht rückgängig gemacht werden.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Abbrechen', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Löschen',
           style: 'destructive',
           onPress: async () => {
             await DatabaseService.deleteAllEvents();
-            Alert.alert('Success', 'All data deleted');
+            Alert.alert('Erledigt', 'Alle Daten wurden gelöscht.');
           }
         }
       ]
@@ -27,18 +29,18 @@ export default function SettingsScreen({ navigation }) {
   };
 
   const handleSync = async () => {
-    Alert.alert('Syncing...', 'This may take a moment');
+    Alert.alert('Synchronisierung', 'Daten werden zur Cloud synchronisiert...');
     await DatabaseService.syncToSupabase();
-    Alert.alert('Success', 'Data synced to cloud');
+    Alert.alert('Erledigt', 'Daten wurden synchronisiert.');
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>‹ Back</Text>
+          <Text style={styles.backButton}>‹ Zurück</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>Einstellungen</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -46,41 +48,57 @@ export default function SettingsScreen({ navigation }) {
         <Text style={styles.sectionTitle}>Monitoring</Text>
 
         <SettingRow
-          label="Detection Threshold"
+          label="Erkennungsschwelle"
           value={`${threshold} dB`}
-          onPress={() => Alert.alert('Coming Soon', 'Threshold adjustment will be available in next version')}
+          onPress={() => Alert.alert('Schwellenwert', 'Die Erkennungsschwelle beträgt aktuell 55 dB. Werte darüber werden als Störung erfasst.')}
         />
 
         <SettingSwitch
-          label="Push Notifications"
-          value={notifications}
-          onValueChange={setNotifications}
+          label="Hintergrund-Monitoring"
+          value={backgroundMonitoring}
+          onValueChange={setBackgroundMonitoring}
         />
 
         <SettingSwitch
-          label="Night Mode Only (22:00-06:00)"
-          value={nightMode}
-          onValueChange={setNightMode}
+          label="Nur Nachtmodus (22:00-06:00)"
+          value={nightModeOnly}
+          onValueChange={setNightModeOnly}
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data</Text>
+        <Text style={styles.sectionTitle}>Benachrichtigungen</Text>
+
+        <SettingSwitch
+          label="Lärm-Benachrichtigungen"
+          value={noiseAlerts}
+          onValueChange={setNoiseAlerts}
+        />
+
+        <SettingSwitch
+          label="Tägliche Zusammenfassung"
+          value={dailySummary}
+          onValueChange={setDailySummary}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Daten</Text>
 
         <SettingRow
-          label="Sync to Cloud"
-          value="Now"
+          label="Zur Cloud synchronisieren"
+          value="Jetzt"
           onPress={handleSync}
         />
 
         <SettingRow
-          label="Export Data"
+          label="Daten exportieren"
           value="CSV"
-          onPress={() => Alert.alert('Coming Soon', 'Data export will be available in next version')}
+          onPress={() => Alert.alert('Export', 'CSV-Export wird in der nächsten Version verfügbar sein.')}
         />
 
         <SettingRow
-          label="Delete All Data"
+          label="Alle Daten löschen"
           value=""
           destructive
           onPress={handleDeleteAllData}
@@ -88,35 +106,37 @@ export default function SettingsScreen({ navigation }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Privacy</Text>
+        <Text style={styles.sectionTitle}>Datenschutz</Text>
 
         <View style={styles.privacyBox}>
-          <Text style={styles.privacyTitle}>🔒 Privacy Guarantee</Text>
+          <Text style={styles.privacyTitle}>🔒 Datenschutz-Garantie</Text>
           <Text style={styles.privacyText}>
-            SilenceNow never records audio. We only store:
-            {'\n'}{'\u2022'} Decibel values (numbers)
-            {'\n'}{'\u2022'} Frequency bands (numbers)
-            {'\n'}{'\u2022'} Timestamps
+            SilenceNow nimmt niemals Audio auf. Wir speichern nur:
+            {'\n'}{'\u2022'} Dezibel-Werte (Zahlen)
+            {'\n'}{'\u2022'} Frequenzbänder (Zahlen)
+            {'\n'}{'\u2022'} Zeitstempel
             {'\n'}{'\n'}
-            No audio files. No voices. No conversations.
+            Keine Audiodateien. Keine Stimmen. Keine Gespräche.
+            {'\n'}§201 StGB und DSGVO konform.
             {'\n'}{'\n'}
-            Your data is stored locally on your device. Cloud sync is optional.
+            Deine Daten werden lokal auf deinem Gerät gespeichert. 
+            Cloud-Sync ist optional.
           </Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
+        <Text style={styles.sectionTitle}>Info</Text>
 
-        <SettingRow label="Version" value="1.0.0 (MVP)" />
-        <SettingRow label="Privacy Policy" value="" onPress={() => Alert.alert('Coming Soon')} />
-        <SettingRow label="Terms of Service" value="" onPress={() => Alert.alert('Coming Soon')} />
-        <SettingRow label="Contact Support" value="support@silencenow.app" />
+        <SettingRow label="Version" value="1.1.0 (MVP)" />
+        <SettingRow label="Datenschutzerklärung" value="" onPress={() => Alert.alert('Datenschutz', 'Datenschutzerklärung wird ergänzt.')} />
+        <SettingRow label="Nutzungsbedingungen" value="" onPress={() => Alert.alert('AGB', 'Nutzungsbedingungen werden ergänzt.')} />
+        <SettingRow label="Support" value="support@silencenow.app" />
       </View>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Made with care for tenants' rights 🔇
+          Für Mieterrechte entwickelt 🔇
         </Text>
       </View>
     </ScrollView>
@@ -200,6 +220,7 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     color: COLORS.MIDNIGHT_BLUE,
+    flex: 1,
   },
   settingValue: {
     fontSize: 16,
