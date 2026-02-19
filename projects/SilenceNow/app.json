@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "SilenceNow",
+    "slug": "silencenow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A2332"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.silencenow.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "SilenceNow measures sound levels to help document noise complaints. No audio is recorded or stored, only decibel measurements.",
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A2332"
+      },
+      "package": "com.silencenow.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WAKE_LOCK"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "SilenceNow measures noise levels to document complaints. No audio is stored, only decibel readings."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      },
+      "SUPABASE_URL": "https://aawfwtwufqenrdzqfmgw.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhd2Z3dHd1ZnFlbnJkenFmbWd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUzMTMsImV4cCI6MjA4NzAzMTMxM30.OYAKNTOHdq1UD1HyOk5SZK7bJa1G_8WPEQv9ors8dU0"
+    }
+  }
+}
