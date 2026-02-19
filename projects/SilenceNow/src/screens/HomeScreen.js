@@ -190,14 +190,12 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.estimateValue}>{estimateRentReduction()}</Text>
         </View>
 
-        {stats.totalEvents >= 10 && (
-          <TouchableOpacity
-            style={styles.reportButton}
-            onPress={() => Alert.alert('Coming Soon', 'Report generation will be available in next version')}
-          >
-            <Text style={styles.reportButtonText}>Generate Report</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.reportButton}
+          onPress={() => navigation.navigate('Reports')}
+        >
+          <Text style={styles.reportButtonText}>⚖️ Rechtliche Bewertung & Reports</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.eventsSection}>

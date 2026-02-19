@@ -96,6 +96,26 @@ class DatabaseService {
 
       await this.db.execAsync(`
 
+        CREATE TABLE IF NOT EXISTS event_witnesses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_id INTEGER NOT NULL,
+          witness_name TEXT NOT NULL,
+          witness_contact TEXT,
+          witness_relationship TEXT,
+          statement TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (event_id) REFERENCES noise_events(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS event_notes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_id INTEGER NOT NULL,
+          note_text TEXT NOT NULL,
+          note_type TEXT DEFAULT 'general',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (event_id) REFERENCES noise_events(id)
+        );
+
         CREATE TABLE IF NOT EXISTS monitoring_sessions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           started_at TEXT NOT NULL,
@@ -457,6 +477,177 @@ class DatabaseService {
         }
       }
       return this.memoryCache.filter(e => (e.legalScore || 0) >= minScore && e.timestamp > cutoff);
+    }
+  }
+
+  // ============================================================
+  // WITNESSES
+  // ============================================================
+
+  async addWitness(eventId, witness) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        const result = await this.db.runAsync(
+          `INSERT INTO event_witnesses (event_id, witness_name, witness_contact, witness_relationship, statement)
+           VALUES (?, ?, ?, ?, ?)`,
+          [eventId, witness.name, witness.contact || null, witness.relationship || null, witness.statement || null]
+        );
+        console.log('[DB] Witness added:', result.lastInsertRowId);
+        return result.lastInsertRowId;
+      } catch (error) {
+        console.error('[DB] Add witness error:', error);
+        return null;
+      }
+    } else {
+      // Web/Supabase fallback
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('event_witnesses')
+            .insert({
+              event_id: eventId,
+              witness_name: witness.name,
+              witness_contact: witness.contact || null,
+              witness_relationship: witness.relationship || null,
+              statement: witness.statement || null,
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          return data?.id;
+        } catch (error) {
+          console.error('[DB] Supabase add witness error:', error);
+        }
+      }
+      return null;
+    }
+  }
+
+  async getWitnesses(eventId) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          'SELECT * FROM event_witnesses WHERE event_id = ? ORDER BY created_at DESC',
+          [eventId]
+        );
+      } catch (error) {
+        console.error('[DB] Get witnesses error:', error);
+        return [];
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('event_witnesses')
+            .select('*')
+            .eq('event_id', eventId)
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        } catch (error) {
+          console.error('[DB] Supabase get witnesses error:', error);
+        }
+      }
+      return [];
+    }
+  }
+
+  async deleteWitness(witnessId) {
+    await this._ensureReady();
+    if (this.useLocalDB) {
+      try {
+        await this.db.runAsync('DELETE FROM event_witnesses WHERE id = ?', [witnessId]);
+      } catch (error) {
+        console.error('[DB] Delete witness error:', error);
+      }
+    }
+  }
+
+  // ============================================================
+  // NOTES
+  // ============================================================
+
+  async addNote(eventId, note) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        const result = await this.db.runAsync(
+          `INSERT INTO event_notes (event_id, note_text, note_type)
+           VALUES (?, ?, ?)`,
+          [eventId, note.text, note.type || 'general']
+        );
+        console.log('[DB] Note added:', result.lastInsertRowId);
+        return result.lastInsertRowId;
+      } catch (error) {
+        console.error('[DB] Add note error:', error);
+        return null;
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('event_notes')
+            .insert({
+              event_id: eventId,
+              note_text: note.text,
+              note_type: note.type || 'general',
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          return data?.id;
+        } catch (error) {
+          console.error('[DB] Supabase add note error:', error);
+        }
+      }
+      return null;
+    }
+  }
+
+  async getNotes(eventId) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          'SELECT * FROM event_notes WHERE event_id = ? ORDER BY created_at DESC',
+          [eventId]
+        );
+      } catch (error) {
+        console.error('[DB] Get notes error:', error);
+        return [];
+      }
+    } else {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('event_notes')
+            .select('*')
+            .eq('event_id', eventId)
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        } catch (error) {
+          console.error('[DB] Supabase get notes error:', error);
+        }
+      }
+      return [];
+    }
+  }
+
+  async deleteNote(noteId) {
+    await this._ensureReady();
+    if (this.useLocalDB) {
+      try {
+        await this.db.runAsync('DELETE FROM event_notes WHERE id = ?', [noteId]);
+      } catch (error) {
+        console.error('[DB] Delete note error:', error);
+      }
     }
   }
 
