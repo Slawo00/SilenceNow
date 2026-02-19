@@ -425,4 +425,4 @@ class AudioMonitorV2 {
   }
 }
 
-export default AudioMonitorV2;
+export default new AudioMonitorV2();
