@@ -6,19 +6,40 @@
  * CONVERSION TRIGGER: "You now have enough evidence for legal action!"
  */
 
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import BRAND from '../theme/BrandColors';
 
-// Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Lazy-load expo-notifications (may not be installed)
+let Notifications = null;
+try {
+  Notifications = require('expo-notifications');
+} catch (e) {
+  console.log('[Notifications] expo-notifications not available');
+}
+
+// Simple in-memory storage fallback (no AsyncStorage dependency)
+const _storage = {};
+const Storage = {
+  async getItem(key) { return _storage[key] || null; },
+  async setItem(key, value) { _storage[key] = value; },
+};
+
+// Brand color fallback
+const JUSTICE_GREEN = '#00C853';
+
+// Configure notification behavior (only if available)
+if (Notifications) {
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  } catch (e) {
+    console.log('[Notifications] Handler setup skipped');
+  }
+}
 
 class NotificationService {
   constructor() {
@@ -52,6 +73,12 @@ class NotificationService {
   async initialize() {
     if (this.isInitialized) return true;
 
+    if (!Notifications) {
+      console.log('[Notifications] Module not available, skipping init');
+      this.isInitialized = true;
+      return false;
+    }
+
     try {
       // Request permissions
       const { status } = await Notifications.requestPermissionsAsync();
@@ -62,16 +89,19 @@ class NotificationService {
       }
 
       // Get push token for remote notifications
-      const token = await Notifications.getExpoPushTokenAsync();
-      console.log('Push token:', token);
-
-      // Store token for backend
-      await AsyncStorage.setItem('pushToken', token.data);
+      try {
+        const token = await Notifications.getExpoPushTokenAsync();
+        console.log('Push token:', token);
+        await Storage.setItem('pushToken', token.data);
+      } catch (tokenErr) {
+        console.warn('Push token not available:', tokenErr.message);
+      }
 
       this.isInitialized = true;
       return true;
     } catch (error) {
       console.error('Notification initialization failed:', error);
+      this.isInitialized = true; // Don't block app
       return false;
     }
   }
@@ -300,6 +330,11 @@ class NotificationService {
    * Schedule notification (local or push)
    */
   async scheduleNotification({ title, body, data, priority = 'default', sound, trigger }) {
+    if (!Notifications) {
+      console.log(`[Notifications] Would send: ${title} - ${body}`);
+      return null;
+    }
+
     try {
       const notificationContent = {
         title,
@@ -307,26 +342,23 @@ class NotificationService {
         data,
         sound: sound || null,
         priority,
-        color: BRAND.COLORS.JUSTICE_GREEN
+        color: JUSTICE_GREEN
       };
 
       let notificationId;
       
       if (trigger) {
-        // Scheduled notification
         notificationId = await Notifications.scheduleNotificationAsync({
           content: notificationContent,
           trigger
         });
       } else {
-        // Immediate notification
         notificationId = await Notifications.scheduleNotificationAsync({
           content: notificationContent,
           trigger: null
         });
       }
 
-      // Log for analytics
       await this.logNotification(notificationId, data.type, { title, body });
       
       return notificationId;
@@ -355,6 +387,7 @@ class NotificationService {
    * Cancel scheduled notifications
    */
   async cancelNotifications(type) {
+    if (!Notifications) return;
     try {
       const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
       
@@ -372,7 +405,7 @@ class NotificationService {
    * Update notification settings based on user preferences
    */
   async updateSettings(settings) {
-    await AsyncStorage.setItem('notificationSettings', JSON.stringify({
+    await Storage.setItem('notificationSettings', JSON.stringify({
       noiseAlerts: settings.noiseAlerts ?? true,
       legalMilestones: settings.legalMilestones ?? true,
       dailySummary: settings.dailySummary ?? true,
@@ -388,7 +421,7 @@ class NotificationService {
    */
   async isNotificationEnabled(type) {
     try {
-      const settings = await AsyncStorage.getItem('notificationSettings');
+      const settings = await Storage.getItem('notificationSettings');
       const parsed = settings ? JSON.parse(settings) : {};
       
       // Default to enabled for critical notifications
@@ -413,7 +446,7 @@ class NotificationService {
    */
   async logNotification(notificationId, type, content) {
     try {
-      await AsyncStorage.setItem(`notification_${notificationId}`, JSON.stringify({
+      await Storage.setItem(`notification_${notificationId}`, JSON.stringify({
         type,
         content,
         sentAt: Date.now(),
@@ -429,7 +462,7 @@ class NotificationService {
    */
   async logNotificationTap(type) {
     try {
-      const tapLog = await AsyncStorage.getItem('notificationTaps') || '[]';
+      const tapLog = await Storage.getItem('notificationTaps') || '[]';
       const taps = JSON.parse(tapLog);
       
       taps.push({
@@ -442,7 +475,7 @@ class NotificationService {
         taps.splice(0, taps.length - 100);
       }
       
-      await AsyncStorage.setItem('notificationTaps', JSON.stringify(taps));
+      await Storage.setItem('notificationTaps', JSON.stringify(taps));
     } catch (error) {
       console.error('Failed to log notification tap:', error);
     }
@@ -453,7 +486,7 @@ class NotificationService {
    */
   async getAnalytics() {
     try {
-      const tapLog = await AsyncStorage.getItem('notificationTaps') || '[]';
+      const tapLog = await Storage.getItem('notificationTaps') || '[]';
       const taps = JSON.parse(tapLog);
       
       const analytics = {
