@@ -120,7 +120,10 @@ class AudioMonitorV2 {
       };
 
       this.recording = new Audio.Recording();
-      await this.recording.prepareToRecordAsync(recordingOptions);
+      await this.recording.prepareToRecordAsync({
+        ...recordingOptions,
+        isMeteringEnabled: true,
+      });
       await this.recording.startAsync();
 
       this.isMonitoring = true;
