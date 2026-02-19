@@ -50,7 +50,7 @@ class DatabaseService {
     if (this.useLocalDB) {
       this.db = await SQLite.openDatabaseAsync('silencenow.db');
 
-      // Extended schema with legal fields
+      // Base schema (compatible with existing DB)
       await this.db.execAsync(`
         CREATE TABLE IF NOT EXISTS noise_events (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,17 +63,38 @@ class DatabaseService {
           freq_high_mid REAL DEFAULT 0,
           freq_high REAL DEFAULT 0,
           classification TEXT DEFAULT 'Loud',
-          detailed_type TEXT,
-          likely_source TEXT,
-          legal_relevance TEXT DEFAULT 'low',
-          legal_score INTEGER DEFAULT 0,
-          is_nighttime_violation INTEGER DEFAULT 0,
-          time_context TEXT,
-          health_impact TEXT DEFAULT 'low',
-          duration_impact TEXT DEFAULT 'brief',
           synced INTEGER DEFAULT 0,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
+      `);
+
+      // Migrate: Add new columns to existing table (safe - ignores if exists)
+      const migrations = [
+        'ALTER TABLE noise_events ADD COLUMN detailed_type TEXT',
+        'ALTER TABLE noise_events ADD COLUMN likely_source TEXT',
+        'ALTER TABLE noise_events ADD COLUMN legal_relevance TEXT DEFAULT "low"',
+        'ALTER TABLE noise_events ADD COLUMN legal_score INTEGER DEFAULT 0',
+        'ALTER TABLE noise_events ADD COLUMN is_nighttime_violation INTEGER DEFAULT 0',
+        'ALTER TABLE noise_events ADD COLUMN time_context TEXT',
+        'ALTER TABLE noise_events ADD COLUMN health_impact TEXT DEFAULT "low"',
+        'ALTER TABLE noise_events ADD COLUMN duration_impact TEXT DEFAULT "brief"',
+        'ALTER TABLE noise_events ADD COLUMN ai_type TEXT',
+        'ALTER TABLE noise_events ADD COLUMN ai_confidence INTEGER DEFAULT 0',
+        'ALTER TABLE noise_events ADD COLUMN ai_emoji TEXT',
+        'ALTER TABLE noise_events ADD COLUMN ai_description TEXT',
+        'ALTER TABLE noise_events ADD COLUMN ai_legal_category TEXT',
+        'ALTER TABLE noise_events ADD COLUMN ai_severity TEXT',
+      ];
+
+      for (const migration of migrations) {
+        try {
+          await this.db.execAsync(migration);
+        } catch (e) {
+          // Column already exists - ignore
+        }
+      }
+
+      await this.db.execAsync(`
 
         CREATE TABLE IF NOT EXISTS monitoring_sessions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,8 +163,9 @@ class DatabaseService {
         `INSERT INTO noise_events 
         (timestamp, decibel, duration, freq_bass, freq_low_mid, freq_mid, freq_high_mid, freq_high,
          classification, detailed_type, likely_source, legal_relevance, legal_score,
-         is_nighttime_violation, time_context, health_impact, duration_impact) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         is_nighttime_violation, time_context, health_impact, duration_impact,
+         ai_type, ai_confidence, ai_emoji, ai_description, ai_legal_category, ai_severity) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event.timestamp,
           event.decibel,
@@ -154,14 +176,20 @@ class DatabaseService {
           event.freqBands?.highMid || 0,
           event.freqBands?.high || 0,
           event.classification || 'Loud',
-          event.detailedType || null,
+          event.detailedType || event.aiType || null,
           event.likelySource || null,
           event.legalRelevance || 'low',
           event.legalScore || 0,
           event.isNighttimeViolation ? 1 : 0,
           event.timeContext || null,
           event.healthImpact || 'low',
-          event.durationImpact || 'brief'
+          event.durationImpact || 'brief',
+          event.aiType || null,
+          event.aiConfidence || 0,
+          event.aiEmoji || null,
+          event.aiDescription || null,
+          event.aiLegalCategory || null,
+          event.aiSeverity || null
         ]
       );
 

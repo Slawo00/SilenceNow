@@ -100,13 +100,25 @@ class EventDetector {
       0
     ) / measurementsForAvg.length;
 
+    // Calculate average frequency bands safely
+    const getFreq = (m, key) => (m.freqBands && m.freqBands[key]) || 0;
     const avgFreqBands = {
-      bass: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.bass, 0) / measurementsForAvg.length,
-      lowMid: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.lowMid, 0) / measurementsForAvg.length,
-      mid: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.mid, 0) / measurementsForAvg.length,
-      highMid: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.highMid, 0) / measurementsForAvg.length,
-      high: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.high, 0) / measurementsForAvg.length,
+      bass: measurementsForAvg.reduce((sum, m) => sum + getFreq(m, 'bass'), 0) / measurementsForAvg.length,
+      lowMid: measurementsForAvg.reduce((sum, m) => sum + getFreq(m, 'lowMid'), 0) / measurementsForAvg.length,
+      mid: measurementsForAvg.reduce((sum, m) => sum + getFreq(m, 'mid'), 0) / measurementsForAvg.length,
+      highMid: measurementsForAvg.reduce((sum, m) => sum + getFreq(m, 'highMid'), 0) / measurementsForAvg.length,
+      high: measurementsForAvg.reduce((sum, m) => sum + getFreq(m, 'high'), 0) / measurementsForAvg.length,
     };
+
+    // If freq bands are all zero (old data), estimate from decibel
+    const totalFreq = avgFreqBands.bass + avgFreqBands.lowMid + avgFreqBands.mid + avgFreqBands.highMid + avgFreqBands.high;
+    if (totalFreq === 0 && avgDecibel > 0) {
+      avgFreqBands.bass = avgDecibel * 0.30;
+      avgFreqBands.lowMid = avgDecibel * 0.25;
+      avgFreqBands.mid = avgDecibel * 0.25;
+      avgFreqBands.highMid = avgDecibel * 0.12;
+      avgFreqBands.high = avgDecibel * 0.08;
+    }
 
     // AI-enhanced classification
     const aiResult = classifyNoiseAI(
@@ -116,15 +128,8 @@ class EventDetector {
       this.activeEvent.measurements
     );
 
-    // Use AI classification, fallback to simple rules
-    let classification = aiResult.type || 'Loud';
-    if (!aiResult.type || aiResult.confidence < 40) {
-      if (isBassDominant(avgFreqBands)) {
-        classification = 'Music (Bass)';
-      } else if (avgDecibel > 80) {
-        classification = 'Very Loud';
-      }
-    }
+    // Always use AI classification - it always returns a type
+    let classification = aiResult.type || 'Laut';
 
     const event = {
       timestamp: this.activeEvent.startTime,
