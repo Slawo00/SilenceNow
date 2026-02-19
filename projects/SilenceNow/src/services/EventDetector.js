@@ -133,7 +133,7 @@ class EventDetector {
     let classification = aiResult.type || 'Laut';
 
     const event = {
-      timestamp: this.activeEvent.startTime,
+      timestamp: new Date(this.activeEvent.startTime).toISOString(),
       decibel: Math.round(avgDecibel),
       duration: Math.round(duration / 1000),
       freqBands: avgFreqBands,

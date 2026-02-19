@@ -10,6 +10,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { COLORS } from '../utils/constants';
 import DatabaseService from '../services/DatabaseService';
@@ -31,7 +33,23 @@ export default function EventDetailScreen({ route, navigation }) {
   const [noteText, setNoteText] = useState('');
   const [noteType, setNoteType] = useState('general');
 
-  const date = new Date(event.timestamp);
+  // Robust date parsing: handles ISO strings, unix timestamps (ms), and numeric strings
+  const parseTimestamp = (ts) => {
+    if (!ts) return new Date();
+    if (ts instanceof Date) return ts;
+    // If it's a number or numeric string (unix ms timestamp)
+    const num = typeof ts === 'string' ? Number(ts) : ts;
+    if (typeof num === 'number' && !isNaN(num) && num > 1000000000000) {
+      return new Date(num); // milliseconds
+    }
+    if (typeof num === 'number' && !isNaN(num) && num > 1000000000) {
+      return new Date(num * 1000); // seconds
+    }
+    const parsed = new Date(ts);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  };
+
+  const date = parseTimestamp(event.timestamp);
   const timeString = date.toLocaleTimeString('de-DE', {
     hour: '2-digit',
     minute: '2-digit',
@@ -426,61 +444,70 @@ export default function EventDetailScreen({ route, navigation }) {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>👤 Zeuge hinzufügen</Text>
-              <TouchableOpacity onPress={() => setShowWitnessModal(false)}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>👤 Zeuge hinzufügen</Text>
+                <TouchableOpacity onPress={() => setShowWitnessModal(false)}>
+                  <Text style={styles.modalClose}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                <Text style={styles.modalHint}>
+                  Zeugen stärken deine Rechtsposition vor Gericht erheblich. Dokumentiere wer den Lärm ebenfalls bestätigen kann.
+                </Text>
+
+                <Text style={styles.inputLabel}>Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Vor- und Nachname"
+                  placeholderTextColor="#999"
+                  value={witnessName}
+                  onChangeText={setWitnessName}
+                />
+
+                <Text style={styles.inputLabel}>Kontakt (optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Telefon oder E-Mail"
+                  placeholderTextColor="#999"
+                  value={witnessContact}
+                  onChangeText={setWitnessContact}
+                />
+
+                <Text style={styles.inputLabel}>Beziehung (optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="z.B. Nachbar, Partner, Besucher"
+                  placeholderTextColor="#999"
+                  value={witnessRelationship}
+                  onChangeText={setWitnessRelationship}
+                />
+
+                <Text style={styles.inputLabel}>Aussage (optional)</Text>
+                <TextInput
+                  style={[styles.input, styles.inputMultiline]}
+                  placeholder="Was hat der Zeuge beobachtet?"
+                  placeholderTextColor="#999"
+                  value={witnessStatement}
+                  onChangeText={setWitnessStatement}
+                  multiline
+                  numberOfLines={3}
+                />
+
+                <TouchableOpacity style={styles.modalButton} onPress={handleAddWitness}>
+                  <Text style={styles.modalButtonText}>Zeuge speichern</Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-
-            <Text style={styles.modalHint}>
-              Zeugen stärken deine Rechtsposition vor Gericht erheblich. Dokumentiere wer den Lärm ebenfalls bestätigen kann.
-            </Text>
-
-            <Text style={styles.inputLabel}>Name *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Vor- und Nachname"
-              placeholderTextColor="#999"
-              value={witnessName}
-              onChangeText={setWitnessName}
-            />
-
-            <Text style={styles.inputLabel}>Kontakt (optional)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Telefon oder E-Mail"
-              placeholderTextColor="#999"
-              value={witnessContact}
-              onChangeText={setWitnessContact}
-            />
-
-            <Text style={styles.inputLabel}>Beziehung (optional)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="z.B. Nachbar, Partner, Besucher"
-              placeholderTextColor="#999"
-              value={witnessRelationship}
-              onChangeText={setWitnessRelationship}
-            />
-
-            <Text style={styles.inputLabel}>Aussage (optional)</Text>
-            <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              placeholder="Was hat der Zeuge beobachtet?"
-              placeholderTextColor="#999"
-              value={witnessStatement}
-              onChangeText={setWitnessStatement}
-              multiline
-              numberOfLines={3}
-            />
-
-            <TouchableOpacity style={styles.modalButton} onPress={handleAddWitness}>
-              <Text style={styles.modalButtonText}>Zeuge speichern</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -494,49 +521,58 @@ export default function EventDetailScreen({ route, navigation }) {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>📝 Notiz hinzufügen</Text>
-              <TouchableOpacity onPress={() => setShowNoteModal(false)}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalHint}>
-              Beschreibe was du gehört, gefühlt oder erlebt hast. Persönliche Notizen ergänzen die technischen Messwerte.
-            </Text>
-
-            <Text style={styles.inputLabel}>Kategorie</Text>
-            <View style={styles.typeSelector}>
-              {Object.entries(noteTypeLabels).map(([key, label]) => (
-                <TouchableOpacity
-                  key={key}
-                  style={[styles.typeChip, noteType === key && styles.typeChipActive]}
-                  onPress={() => setNoteType(key)}
-                >
-                  <Text style={[styles.typeChipText, noteType === key && styles.typeChipTextActive]}>
-                    {label}
-                  </Text>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>📝 Notiz hinzufügen</Text>
+                <TouchableOpacity onPress={() => setShowNoteModal(false)}>
+                  <Text style={styles.modalClose}>✕</Text>
                 </TouchableOpacity>
-              ))}
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                <Text style={styles.modalHint}>
+                  Beschreibe was du gehört, gefühlt oder erlebt hast. Persönliche Notizen ergänzen die technischen Messwerte.
+                </Text>
+
+                <Text style={styles.inputLabel}>Kategorie</Text>
+                <View style={styles.typeSelector}>
+                  {Object.entries(noteTypeLabels).map(([key, label]) => (
+                    <TouchableOpacity
+                      key={key}
+                      style={[styles.typeChip, noteType === key && styles.typeChipActive]}
+                      onPress={() => setNoteType(key)}
+                    >
+                      <Text style={[styles.typeChipText, noteType === key && styles.typeChipTextActive]}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={styles.inputLabel}>Notiz *</Text>
+                <TextInput
+                  style={[styles.input, styles.inputMultiline, { height: 120 }]}
+                  placeholder="z.B. Laute Musik vom Nachbarn über mir, konnte nicht schlafen..."
+                  placeholderTextColor="#999"
+                  value={noteText}
+                  onChangeText={setNoteText}
+                  multiline
+                  numberOfLines={5}
+                />
+
+                <TouchableOpacity style={styles.modalButton} onPress={handleAddNote}>
+                  <Text style={styles.modalButtonText}>Notiz speichern</Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-
-            <Text style={styles.inputLabel}>Notiz *</Text>
-            <TextInput
-              style={[styles.input, styles.inputMultiline, { height: 120 }]}
-              placeholder="z.B. Laute Musik vom Nachbarn über mir, konnte nicht schlafen..."
-              placeholderTextColor="#999"
-              value={noteText}
-              onChangeText={setNoteText}
-              multiline
-              numberOfLines={5}
-            />
-
-            <TouchableOpacity style={styles.modalButton} onPress={handleAddNote}>
-              <Text style={styles.modalButtonText}>Notiz speichern</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -890,8 +926,11 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 40,
-    maxHeight: '85%',
+    paddingBottom: 20,
+    maxHeight: '90%',
+  },
+  modalScrollContent: {
+    paddingBottom: 30,
   },
   modalHeader: {
     flexDirection: 'row',

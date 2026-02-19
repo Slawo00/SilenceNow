@@ -340,7 +340,7 @@ class NotificationService {
         title,
         body,
         data,
-        sound: sound || null,
+        sound: sound === false ? false : (typeof sound === 'string' ? sound : true),
         priority,
         color: JUSTICE_GREEN
       };
