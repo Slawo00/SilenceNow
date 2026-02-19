@@ -13,8 +13,14 @@
  */
 
 import { Platform } from 'react-native';
-import { createClient } from '@supabase/supabase-js';
-import 'react-native-url-polyfill/auto';
+// Lazy-load optional dependencies
+let createClient = null;
+try {
+  createClient = require('@supabase/supabase-js').createClient;
+  require('react-native-url-polyfill/auto');
+} catch (e) {
+  console.log('[DB] Supabase modules not available, using local-only mode');
+}
 
 // SQLite nur für native Plattformen laden
 let SQLite = null;
@@ -27,7 +33,7 @@ const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 let supabase = null;
-if (supabaseUrl && supabaseKey) {
+if (supabaseUrl && supabaseKey && createClient) {
   supabase = createClient(supabaseUrl, supabaseKey);
 }
 

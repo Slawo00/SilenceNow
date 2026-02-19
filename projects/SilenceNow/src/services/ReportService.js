@@ -12,10 +12,16 @@
  * @version 1.0
  */
 
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import { Alert, Share, Platform } from 'react-native';
 import DatabaseService from './DatabaseService';
+
+// Lazy-load optional expo modules
+let Print = null;
+let Sharing = null;
+let FileSystem = null;
+try { Print = require('expo-print'); } catch (e) { console.log('[Report] expo-print not available'); }
+try { Sharing = require('expo-sharing'); } catch (e) { console.log('[Report] expo-sharing not available'); }
+try { FileSystem = require('expo-file-system'); } catch (e) { console.log('[Report] expo-file-system not available'); }
 
 class ReportService {
 
@@ -53,6 +59,21 @@ class ReportService {
 
       console.log('[Report] HTML generated, creating PDF...');
       
+      if (!Print) {
+        // Fallback: Share HTML as text if expo-print not available
+        console.log('[Report] expo-print not available, using Share fallback');
+        await Share.share({
+          message: `SilenceNow Lärmprotokoll\n\n${legalSummary.totalEvents} Ereignisse in ${days} Tagen\nØ ${legalSummary.avgDecibel} dB\n${legalSummary.nightViolations} Nachtruhestörungen`,
+          title: 'SilenceNow Lärmprotokoll',
+        });
+        return {
+          success: true,
+          uri: null,
+          filename: 'shared_as_text',
+          summary: legalSummary
+        };
+      }
+
       // Generate PDF
       const { uri } = await Print.printToFileAsync({
         html,
@@ -63,14 +84,19 @@ class ReportService {
 
       // Rename with proper filename
       const filename = `SilenceNow_Laermprotokoll_${new Date().toISOString().split('T')[0]}.pdf`;
-      const newUri = `${FileSystem.documentDirectory}${filename}`;
-      await FileSystem.moveAsync({ from: uri, to: newUri });
+      let finalUri = uri;
+      
+      if (FileSystem && FileSystem.documentDirectory) {
+        const newUri = `${FileSystem.documentDirectory}${filename}`;
+        await FileSystem.moveAsync({ from: uri, to: newUri });
+        finalUri = newUri;
+      }
 
-      console.log('[Report] PDF generated:', newUri);
+      console.log('[Report] PDF generated:', finalUri);
       
       return {
         success: true,
-        uri: newUri,
+        uri: finalUri,
         filename,
         summary: legalSummary
       };
@@ -88,6 +114,15 @@ class ReportService {
    */
   async shareReport(uri) {
     try {
+      if (!Sharing) {
+        // Fallback to React Native Share
+        await Share.share({
+          message: 'SilenceNow Lärmprotokoll generiert.',
+          title: 'Lärmprotokoll teilen',
+        });
+        return true;
+      }
+
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
         throw new Error('Sharing is not available on this device');
