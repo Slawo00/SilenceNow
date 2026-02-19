@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { COLORS } from '../utils/constants';
 
 export default function EventDetailScreen({ route, navigation }) {
@@ -18,100 +18,227 @@ export default function EventDetailScreen({ route, navigation }) {
     year: 'numeric',
   });
 
-  const getEmoji = (classification) => {
-    if (classification && classification.includes('Music')) return '🎵';
-    if (classification && classification.includes('Very Loud')) return '📢';
+  // Determine hour for quiet time check
+  const hour = date.getHours();
+  const isNighttime = hour >= 22 || hour < 6;
+  const isEvening = hour >= 19 || hour < 7;
+
+  // Get AI classification data
+  const aiEmoji = event.aiEmoji || event.ai_emoji || getDefaultEmoji(event.classification);
+  const aiType = event.aiType || event.ai_type || event.classification || 'Unbekannt';
+  const aiConfidence = event.aiConfidence || event.ai_confidence || 0;
+  const aiDescription = event.aiDescription || event.ai_description || '';
+  const aiLegalCategory = event.aiLegalCategory || event.ai_legal_category || '';
+  const aiSeverity = event.aiSeverity || event.ai_severity || 'medium';
+
+  // Frequency data
+  const freqBass = event.freq_bass || event.freqBands?.bass || 0;
+  const freqLowMid = event.freq_low_mid || event.freqBands?.lowMid || 0;
+  const freqMid = event.freq_mid || event.freqBands?.mid || 0;
+  const freqHighMid = event.freq_high_mid || event.freqBands?.highMid || 0;
+  const freqHigh = event.freq_high || event.freqBands?.high || 0;
+  const maxFreq = Math.max(freqBass, freqLowMid, freqMid, freqHighMid, freqHigh, 1);
+
+  // Legal score
+  const legalScore = event.legal_score || event.legalScore || 0;
+
+  function getDefaultEmoji(classification) {
+    if (!classification) return '🔊';
+    if (classification.includes('Music') || classification.includes('Musik')) return '🎵';
+    if (classification.includes('Very Loud') || classification.includes('Stark')) return '📢';
+    if (classification.includes('Stimmen') || classification.includes('Voice')) return '🗣️';
+    if (classification.includes('Bau') || classification.includes('Hammer')) return '🔨';
+    if (classification.includes('Maschine') || classification.includes('Brumm')) return '⚙️';
     return '🔊';
-  };
+  }
+
+  function getSeverityColor(severity) {
+    switch (severity) {
+      case 'high': return '#E53935';
+      case 'medium': return '#FF9800';
+      case 'low': return '#4CAF50';
+      default: return COLORS.WARM_GREY;
+    }
+  }
+
+  function getSeverityLabel(severity) {
+    switch (severity) {
+      case 'high': return 'Hoch';
+      case 'medium': return 'Mittel';
+      case 'low': return 'Gering';
+      default: return 'Unbekannt';
+    }
+  }
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>‹ Back</Text>
+          <Text style={styles.backButton}>‹ Zurück</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Event Details</Text>
         <View style={{ width: 60 }} />
       </View>
 
+      {/* Main Classification Card */}
       <View style={styles.card}>
-        <Text style={styles.emoji}>{getEmoji(event.classification)}</Text>
-        <Text style={styles.classification}>{event.classification}</Text>
+        <Text style={styles.emoji}>{aiEmoji}</Text>
+        <Text style={styles.classification}>{aiType}</Text>
+        {aiConfidence > 0 && (
+          <View style={styles.confidenceBadge}>
+            <Text style={styles.confidenceText}>
+              KI-Konfidenz: {aiConfidence}%
+            </Text>
+          </View>
+        )}
         <Text style={styles.datetime}>{dateString}</Text>
         <Text style={styles.time}>{timeString}</Text>
+        {isNighttime && (
+          <View style={styles.nightBadge}>
+            <Text style={styles.nightBadgeText}>🌙 Nachtruhe (22-06 Uhr)</Text>
+          </View>
+        )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Measurement Data</Text>
+      {/* AI Analysis Card */}
+      {aiDescription ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🤖 KI-Analyse</Text>
+          <Text style={styles.aiDescription}>{aiDescription}</Text>
+          <View style={styles.aiGrid}>
+            <View style={styles.aiGridItem}>
+              <Text style={styles.aiGridLabel}>Kategorie</Text>
+              <Text style={styles.aiGridValue}>
+                {aiLegalCategory ? aiLegalCategory.replace(/_/g, ' ') : '-'}
+              </Text>
+            </View>
+            <View style={styles.aiGridItem}>
+              <Text style={styles.aiGridLabel}>Schwere</Text>
+              <Text style={[styles.aiGridValue, { color: getSeverityColor(aiSeverity) }]}>
+                {getSeverityLabel(aiSeverity)}
+              </Text>
+            </View>
+            <View style={styles.aiGridItem}>
+              <Text style={styles.aiGridLabel}>Konfidenz</Text>
+              <Text style={styles.aiGridValue}>{aiConfidence}%</Text>
+            </View>
+          </View>
+        </View>
+      ) : null}
 
-        <DataRow label="Decibel Level" value={`${event.decibel} dB`} />
+      {/* Measurement Data */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📊 Messdaten</Text>
+        <DataRow label="Dezibel" value={`${event.decibel} dB`} highlight={event.decibel > 75} />
         <DataRow
-          label="Duration"
+          label="Dauer"
           value={event.duration ? `${Math.floor(event.duration / 60)}m ${event.duration % 60}s` : 'N/A'}
         />
         <DataRow
-          label="Intensity"
-          value={event.decibel >= 80 ? 'Very High' : event.decibel >= 60 ? 'High' : 'Moderate'}
+          label="Intensität"
+          value={event.decibel >= 85 ? 'Extrem' : event.decibel >= 75 ? 'Sehr hoch' : event.decibel >= 60 ? 'Hoch' : 'Mäßig'}
+          highlight={event.decibel >= 75}
         />
+        <DataRow
+          label="Tageszeit"
+          value={isNighttime ? '🌙 Nachtruhe' : isEvening ? '🌆 Abend' : '☀️ Tag'}
+        />
+        {legalScore > 0 && (
+          <DataRow
+            label="Legal Score"
+            value={`${legalScore}/100`}
+            highlight={legalScore > 60}
+          />
+        )}
       </View>
 
+      {/* Frequency Profile */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Frequency Profile</Text>
-        <FrequencyBar label="Bass" value={event.freq_bass || 0} max={100} />
-        <FrequencyBar label="Low-Mid" value={event.freq_low_mid || 0} max={100} />
-        <FrequencyBar label="Mid" value={event.freq_mid || 0} max={100} />
-        <FrequencyBar label="High-Mid" value={event.freq_high_mid || 0} max={100} />
-        <FrequencyBar label="High" value={event.freq_high || 0} max={100} />
+        <Text style={styles.sectionTitle}>🎛️ Frequenz-Profil</Text>
+        {maxFreq > 0 ? (
+          <>
+            <FrequencyBar label="Bass" value={freqBass} max={maxFreq} color="#E53935" />
+            <FrequencyBar label="Low-Mid" value={freqLowMid} max={maxFreq} color="#FF9800" />
+            <FrequencyBar label="Mid" value={freqMid} max={maxFreq} color="#4CAF50" />
+            <FrequencyBar label="High-Mid" value={freqHighMid} max={maxFreq} color="#2196F3" />
+            <FrequencyBar label="High" value={freqHigh} max={maxFreq} color="#9C27B0" />
+            
+            {/* Frequency interpretation */}
+            <View style={styles.freqInterpretation}>
+              <Text style={styles.freqInterpretationText}>
+                {freqBass > freqMid && freqBass > freqHigh
+                  ? '🎵 Bass-dominantes Geräusch - typisch für Musik, Subwoofer'
+                  : freqMid > freqBass && freqMid > freqHigh
+                  ? '🗣️ Mittenbetontes Geräusch - typisch für Stimmen, TV'
+                  : freqHigh > freqMid
+                  ? '🔧 Höhenbetontes Geräusch - typisch für Werkzeuge, Alarme'
+                  : '📊 Gleichmäßige Verteilung - Breitbandgeräusch'}
+              </Text>
+            </View>
+          </>
+        ) : (
+          <Text style={styles.noDataText}>Keine Frequenzdaten verfügbar</Text>
+        )}
       </View>
 
+      {/* Legal Reference */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Legal Reference</Text>
-        <View style={styles.legalBox}>
+        <Text style={styles.sectionTitle}>⚖️ Rechtliche Einordnung</Text>
+        <View style={[styles.legalBox, isNighttime && styles.legalBoxNight]}>
           <Text style={styles.legalText}>
-            Events above 55 dB during quiet hours (22:00-06:00) may justify rent reduction
-            according to § 536 BGB.
+            {isNighttime
+              ? `🔴 Nachtruhestörung (${timeString}): Dieses Ereignis fand während der gesetzlichen Nachtruhe (22:00-06:00) statt und wiegt rechtlich besonders schwer.`
+              : `Dieses Ereignis wurde um ${timeString} Uhr aufgezeichnet.`}
           </Text>
-          <Text style={styles.legalText}>
-            This event was {event.decibel >= 55 ? 'ABOVE' : 'BELOW'} the threshold.
+          <Text style={[styles.legalText, { marginTop: 8 }]}>
+            {event.decibel >= 55
+              ? `✅ ${event.decibel} dB liegt ÜBER dem Schwellenwert von 55 dB. Eine Mietminderung nach §536 BGB kann begründet sein.`
+              : `Messwert von ${event.decibel} dB liegt unter dem Schwellenwert. Für eine Mietminderung werden i.d.R. >55 dB benötigt.`}
           </Text>
+          {event.decibel >= 80 && (
+            <Text style={[styles.legalText, styles.legalHighlight, { marginTop: 8 }]}>
+              ⚠️ {event.decibel} dB kann gesundheitsschädigend sein! Dies stärkt die Rechtsposition erheblich (BGH VIII ZR 155/11).
+            </Text>
+          )}
         </View>
       </View>
 
+      {/* Actions */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => Alert.alert('Coming Soon', 'Witness feature coming in Phase 2')}
+          onPress={() => Alert.alert('Coming Soon', 'Zeugen-Funktion kommt in Phase 2')}
         >
-          <Text style={styles.actionButtonText}>+ Add Witness</Text>
+          <Text style={styles.actionButtonText}>👤 Zeuge hinzufügen</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => Alert.alert('Coming Soon', 'Manual note feature coming in Phase 2')}
+          onPress={() => Alert.alert('Coming Soon', 'Notiz-Funktion kommt in Phase 2')}
         >
-          <Text style={styles.actionButtonText}>+ Add Note</Text>
+          <Text style={styles.actionButtonText}>📝 Notiz hinzufügen</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
 
-const DataRow = ({ label, value }) => (
+const DataRow = ({ label, value, highlight = false }) => (
   <View style={styles.dataRow}>
     <Text style={styles.dataLabel}>{label}</Text>
-    <Text style={styles.dataValue}>{value}</Text>
+    <Text style={[styles.dataValue, highlight && styles.dataValueHighlight]}>{value}</Text>
   </View>
 );
 
-const FrequencyBar = ({ label, value, max }) => {
-  const percentage = Math.min(100, (value / max) * 100);
+const FrequencyBar = ({ label, value, max, color }) => {
+  const percentage = max > 0 ? Math.min(100, (value / max) * 100) : 0;
 
   return (
     <View style={styles.freqRow}>
       <Text style={styles.freqLabel}>{label}</Text>
       <View style={styles.freqBarContainer}>
-        <View style={[styles.freqBar, { width: `${percentage}%` }]} />
+        <View style={[styles.freqBar, { width: `${percentage}%`, backgroundColor: color }]} />
       </View>
-      <Text style={styles.freqValue}>{Math.round(value)}</Text>
+      <Text style={styles.freqValue}>{Math.round(value * 10) / 10}</Text>
     </View>
   );
 };
@@ -149,16 +276,29 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 64,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   classification: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.MIDNIGHT_BLUE,
-    marginBottom: 8,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  confidenceBadge: {
+    backgroundColor: 'rgba(0, 230, 118, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: 12,
+  },
+  confidenceText: {
+    fontSize: 12,
+    color: COLORS.ELECTRIC_GREEN,
+    fontWeight: '600',
   },
   datetime: {
-    fontSize: 16,
+    fontSize: 14,
     color: COLORS.WARM_GREY,
     marginBottom: 4,
   },
@@ -167,6 +307,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.MIDNIGHT_BLUE,
   },
+  nightBadge: {
+    backgroundColor: '#E53935',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 12,
+  },
+  nightBadgeText: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '600',
+  },
+
+  // AI Section
   section: {
     backgroundColor: COLORS.SOFT_WHITE,
     marginHorizontal: 20,
@@ -180,6 +334,35 @@ const styles = StyleSheet.create({
     color: COLORS.MIDNIGHT_BLUE,
     marginBottom: 16,
   },
+  aiDescription: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  aiGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    padding: 12,
+  },
+  aiGridItem: {
+    alignItems: 'center',
+  },
+  aiGridLabel: {
+    fontSize: 11,
+    color: COLORS.WARM_GREY,
+    marginBottom: 4,
+  },
+  aiGridValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.MIDNIGHT_BLUE,
+    textTransform: 'capitalize',
+  },
+
+  // Data Rows
   dataRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -196,6 +379,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.MIDNIGHT_BLUE,
   },
+  dataValueHighlight: {
+    color: '#E53935',
+  },
+
+  // Frequency
   freqRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -203,28 +391,46 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   freqLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.WARM_GREY,
-    width: 70,
+    width: 65,
   },
   freqBarContainer: {
     flex: 1,
-    height: 8,
+    height: 12,
     backgroundColor: '#E0E0E0',
-    borderRadius: 4,
+    borderRadius: 6,
     overflow: 'hidden',
   },
   freqBar: {
     height: '100%',
-    backgroundColor: COLORS.ELECTRIC_GREEN,
+    borderRadius: 6,
   },
   freqValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.MIDNIGHT_BLUE,
-    width: 40,
+    width: 45,
     textAlign: 'right',
   },
+  freqInterpretation: {
+    backgroundColor: '#f0f7ff',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  freqInterpretationText: {
+    fontSize: 12,
+    color: '#555',
+    lineHeight: 18,
+  },
+  noDataText: {
+    fontSize: 14,
+    color: COLORS.WARM_GREY,
+    fontStyle: 'italic',
+  },
+
+  // Legal
   legalBox: {
     backgroundColor: 'rgba(0, 230, 118, 0.1)',
     borderRadius: 8,
@@ -232,12 +438,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.ELECTRIC_GREEN,
   },
+  legalBoxNight: {
+    backgroundColor: 'rgba(229, 57, 53, 0.1)',
+    borderColor: '#E53935',
+  },
   legalText: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.MIDNIGHT_BLUE,
     lineHeight: 20,
-    marginBottom: 8,
   },
+  legalHighlight: {
+    fontWeight: '600',
+    color: '#E53935',
+  },
+
+  // Footer
   footer: {
     flexDirection: 'row',
     gap: 12,

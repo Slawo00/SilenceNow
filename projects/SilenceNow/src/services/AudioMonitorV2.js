@@ -13,7 +13,7 @@
 
 import { Audio } from 'expo-av';
 import { AppState, Platform } from 'react-native';
-import { estimateFrequencyBands } from '../utils/calculations';
+import { estimateFrequencyBands, classifyNoiseAI } from '../utils/calculations';
 import { DEFAULTS, PRIVACY_CONSTANTS } from '../utils/constants';
 
 class AudioMonitorV2 {
@@ -211,20 +211,33 @@ class AudioMonitorV2 {
         const decibel = this._meterToDecibel(status.metering);
         this.currentDecibel = decibel;
 
-        // Estimate frequency characteristics (mathematical approximation)
-        const frequencyBands = this._estimateFrequencyCharacteristics(decibel);
+        // Estimate frequency characteristics (enhanced mathematical approximation)
+        const freqBands = this._estimateFrequencyCharacteristics(decibel);
+        
+        // AI noise classification
+        const aiClassification = classifyNoiseAI(
+          decibel, freqBands, 0, this.measurementBuffer
+        );
         
         // Detect events based on decibel patterns
-        const eventData = this._analyzeForEvents(decibel, frequencyBands);
+        const eventData = this._analyzeForEvents(decibel, freqBands);
         
-        // Store measurement (numerical data only)
+        // Store measurement with proper field names for database
         const measurement = {
           timestamp: Date.now(),
-          decibel: Math.round(decibel * 10) / 10, // 0.1 dB precision
+          decibel: Math.round(decibel * 10) / 10,
           duration: eventData?.duration || 0,
-          frequencyBands: frequencyBands,
+          // Frequency bands in format expected by EventDetector + Database
+          freqBands: freqBands,
           isEvent: eventData?.isEvent || false,
-          classification: eventData?.classification || null
+          classification: aiClassification.type || eventData?.classification || null,
+          // AI classification data
+          aiType: aiClassification.type,
+          aiConfidence: aiClassification.confidence,
+          aiEmoji: aiClassification.emoji,
+          aiDescription: aiClassification.description,
+          aiLegalCategory: aiClassification.legalCategory,
+          aiSeverity: aiClassification.severity
         };
 
         // Add to buffer (memory-limited)
@@ -263,42 +276,11 @@ class AudioMonitorV2 {
 
   /**
    * Estimate frequency characteristics from decibel patterns
-   * This is mathematical estimation, NO AUDIO ANALYSIS
+   * Uses enhanced calculation from calculations.js
    */
   _estimateFrequencyCharacteristics(decibel) {
-    // Use recent measurements to estimate frequency distribution
-    const recentMeasurements = this.measurementBuffer.slice(-5);
-    
-    if (recentMeasurements.length < 2) {
-      return {
-        low: decibel * 0.3,
-        mid: decibel * 0.4,
-        high: decibel * 0.3
-      };
-    }
-
-    // Analyze decibel variance patterns to estimate frequency content
-    const variance = this._calculateVariance(recentMeasurements.map(m => m.decibel));
-    
-    // High variance often indicates broad spectrum noise
-    // Low variance suggests tonal content
-    if (variance > 5) {
-      // Broad spectrum (likely machinery, traffic)
-      return {
-        low: decibel * 0.4,
-        mid: decibel * 0.4,
-        high: decibel * 0.2,
-        classification_hint: 'broad_spectrum'
-      };
-    } else {
-      // Tonal content (likely music, voices)
-      return {
-        low: decibel * 0.2,
-        mid: decibel * 0.6,
-        high: decibel * 0.2,
-        classification_hint: 'tonal'
-      };
-    }
+    const recentMeasurements = this.measurementBuffer.slice(-10);
+    return estimateFrequencyBands(decibel, recentMeasurements);
   }
 
   /**

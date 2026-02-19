@@ -1,5 +1,5 @@
 import { DEFAULTS } from '../utils/constants';
-import { isBassDominant } from '../utils/calculations';
+import { isBassDominant, classifyNoiseAI } from '../utils/calculations';
 import DatabaseService from './DatabaseService';
 
 class EventDetector {
@@ -108,11 +108,22 @@ class EventDetector {
       high: measurementsForAvg.reduce((sum, m) => sum + m.freqBands.high, 0) / measurementsForAvg.length,
     };
 
-    let classification = 'Loud';
-    if (isBassDominant(avgFreqBands)) {
-      classification = 'Music (Bass)';
-    } else if (avgDecibel > 80) {
-      classification = 'Very Loud';
+    // AI-enhanced classification
+    const aiResult = classifyNoiseAI(
+      avgDecibel,
+      avgFreqBands,
+      Math.round(duration / 1000),
+      this.activeEvent.measurements
+    );
+
+    // Use AI classification, fallback to simple rules
+    let classification = aiResult.type || 'Loud';
+    if (!aiResult.type || aiResult.confidence < 40) {
+      if (isBassDominant(avgFreqBands)) {
+        classification = 'Music (Bass)';
+      } else if (avgDecibel > 80) {
+        classification = 'Very Loud';
+      }
     }
 
     const event = {
@@ -121,6 +132,13 @@ class EventDetector {
       duration: Math.round(duration / 1000),
       freqBands: avgFreqBands,
       classification,
+      // AI classification metadata
+      aiType: aiResult.type,
+      aiConfidence: aiResult.confidence,
+      aiEmoji: aiResult.emoji,
+      aiDescription: aiResult.description,
+      aiLegalCategory: aiResult.legalCategory,
+      aiSeverity: aiResult.severity,
     };
 
     await DatabaseService.insertEvent(event);
