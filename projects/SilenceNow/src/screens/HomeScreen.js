@@ -10,7 +10,7 @@ import {
   AppState,
 } from 'react-native';
 import { COLORS, DEFAULTS } from '../utils/constants';
-import AudioMonitorV2 from '../services/AudioMonitorV2';
+import AudioMonitor from '../services/AudioMonitorV2';
 import EventDetector from '../services/EventDetector';
 import DatabaseService from '../services/DatabaseService';
 import LiveMeter from '../components/LiveMeter';
