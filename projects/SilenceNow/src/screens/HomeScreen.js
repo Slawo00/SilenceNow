@@ -12,6 +12,7 @@ import {
 import { COLORS, DEFAULTS } from '../utils/constants';
 import AudioMonitor from '../services/AudioMonitorV2';
 import EventDetector from '../services/EventDetector';
+import NoiseRecordingService from '../services/NoiseRecordingService';
 import DatabaseService from '../services/DatabaseService';
 import LiveMeter from '../components/LiveMeter';
 import EventCard from '../components/EventCard';
@@ -73,22 +74,48 @@ export default function HomeScreen({ navigation }) {
 
   const startMonitoring = async () => {
     try {
-      await AudioMonitor.startMonitoring((measurement) => {
-        setCurrentDecibel(measurement.decibel);
-        EventDetector.processMeasurement(measurement);
+      // Use enhanced NoiseRecordingService
+      const success = await NoiseRecordingService.startRecording({
+        onStatusUpdate: (status) => {
+          if (status.data && status.data.decibel) {
+            setCurrentDecibel(status.data.decibel);
+          }
+        },
+        onEventDetected: (event) => {
+          console.log('Enhanced event detected:', event);
+          loadData(); // Refresh event list
+        },
+        onError: (error) => {
+          Alert.alert('Recording Error', error.message);
+        }
       });
-      setIsMonitoring(true);
+      
+      if (success) {
+        setIsMonitoring(true);
+        Alert.alert('Enhanced Monitoring', 'Started advanced noise analysis with legal impact assessment');
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to start monitoring: ' + error.message);
+      Alert.alert('Error', 'Failed to start enhanced monitoring: ' + error.message);
     }
   };
 
   const stopMonitoring = async () => {
-    await EventDetector.forceEndEvent();
-    await AudioMonitor.stopMonitoring();
-    setIsMonitoring(false);
-    setCurrentDecibel(0);
-    await loadData();
+    try {
+      const sessionSummary = await NoiseRecordingService.stopRecording();
+      setIsMonitoring(false);
+      setCurrentDecibel(0);
+      await loadData();
+      
+      // Show session summary
+      if (sessionSummary && sessionSummary.eventCount > 0) {
+        Alert.alert(
+          'Session Complete', 
+          `Recorded ${sessionSummary.eventCount} events. Legal Impact Score: ${sessionSummary.legalImpactScore}/100`
+        );
+      }
+    } catch (error) {
+      Alert.alert('Stop Error', error.message);
+    }
   };
 
   const toggleMonitoring = () => {
