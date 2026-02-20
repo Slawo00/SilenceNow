@@ -14,7 +14,6 @@
  */
 
 import { DEFAULTS, NOISE_CATEGORIES } from '../utils/constants';
-import { classifyNoiseAI } from '../utils/calculations';
 import DatabaseService from './DatabaseService';
 import NotificationService from './NotificationService';
 import MotionDetector from './MotionDetector';
@@ -250,15 +249,6 @@ class EventDetector {
       avgFreqBands.high = avgDecibel * 0.08;
     }
 
-    // AI-enhanced classification
-    const aiResult = classifyNoiseAI(
-      avgDecibel,
-      avgFreqBands,
-      Math.round(durationMs / 1000),
-      this.activeEvent.measurements
-    );
-    let classification = aiResult.type || 'Laut';
-
     // ---- MOTION-ANALYSE ----
     const motionStats = MotionDetector.getMotionStatistics();
     const motionCorrelation = MotionDetector.analyzeMotionCorrelation(
@@ -298,6 +288,11 @@ class EventDetector {
     const startTimeISO = new Date(this.activeEvent.startTime).toISOString();
     const endTimeISO = new Date(now).toISOString();
 
+    // Severity hochstufen bei extremen Werten
+    let severity = category.severity;
+    if (avgDecibel > 75) severity = 'high';
+    if (avgDecibel > 85) severity = 'very_high';
+
     const event = {
       timestamp: startTimeISO,
       start_time: startTimeISO,
@@ -307,20 +302,19 @@ class EventDetector {
       peak_decibel: Math.round(peakDb * 10) / 10,
       duration: Math.round(durationMs / 1000),
       freqBands: avgFreqBands,
-      classification,
-      // AI classification
-      aiType: aiResult.type,
-      aiConfidence: aiResult.confidence,
-      aiEmoji: aiResult.emoji,
-      aiDescription: aiResult.description,
-      aiLegalCategory: aiResult.legalCategory,
-      aiSeverity: aiResult.severity,
+      classification: category.label,
+      // Kategorie-Daten (einzige Quelle)
+      noise_category: category.key,
+      category_auto: true,
+      aiType: category.label,
+      aiEmoji: category.emoji,
+      aiDescription: category.description,
+      aiLegalCategory: category.legalCategory,
+      aiSeverity: severity,
+      aiConfidence: 0, // Nur Muster-Erkennung, keine echte AI-Konfidenz
       // Nachbar-Erkennung
       neighbor_score: neighborResult.score,
       source_confirmed: neighborResult.label === 'neighbor' ? 'neighbor' : 'unconfirmed',
-      // Kategorisierung
-      noise_category: category.key,
-      category_auto: true,
     };
 
     await DatabaseService.insertEvent(event);

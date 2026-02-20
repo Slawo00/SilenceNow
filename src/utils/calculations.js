@@ -137,7 +137,10 @@ export const isBassDominant = (freqBands) => {
  * @param {Array} recentMeasurements - Recent measurement history
  * @returns {Object} Classification result
  */
-export const classifyNoiseAI = (decibel, freqBands, duration = 0, recentMeasurements = []) => {
+// DEPRECATED: Ersetzt durch einheitliche Kategorisierung in EventDetector._categorizeNoise()
+// Alte Kategorien wie "Gespräche/TV", "Ruhestörung" etc. werden nicht mehr verwendet.
+// Nur noch: Musik/Bass, Hund/Tier, Trittschall/Schritte, Geschrei/Streit, Handwerk/Bohren, Kinder, Anderes
+const _classifyNoiseAI_DEPRECATED = (decibel, freqBands, duration = 0, recentMeasurements = []) => {
   if (!freqBands || decibel <= 0) {
     return { type: 'Unknown', confidence: 0, emoji: '❓', description: 'Keine Daten' };
   }

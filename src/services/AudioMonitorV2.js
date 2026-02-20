@@ -13,7 +13,7 @@
 
 import { Audio } from 'expo-av';
 import { AppState, Platform } from 'react-native';
-import { estimateFrequencyBands, classifyNoiseAI } from '../utils/calculations';
+import { estimateFrequencyBands } from '../utils/calculations';
 import { DEFAULTS, PRIVACY_CONSTANTS } from '../utils/constants';
 
 class AudioMonitorV2 {
@@ -215,30 +215,17 @@ class AudioMonitorV2 {
         // Estimate frequency characteristics (enhanced mathematical approximation)
         const freqBands = this._estimateFrequencyCharacteristics(decibel);
         
-        // AI noise classification
-        const aiClassification = classifyNoiseAI(
-          decibel, freqBands, 0, this.measurementBuffer
-        );
-        
         // Detect events based on decibel patterns
         const eventData = this._analyzeForEvents(decibel, freqBands);
         
-        // Store measurement with proper field names for database
+        // Store measurement (Klassifizierung passiert im EventDetector bei Event-Ende)
         const measurement = {
           timestamp: Date.now(),
           decibel: Math.round(decibel * 10) / 10,
           duration: eventData?.duration || 0,
-          // Frequency bands in format expected by EventDetector + Database
           freqBands: freqBands,
           isEvent: eventData?.isEvent || false,
-          classification: aiClassification.type || eventData?.classification || null,
-          // AI classification data
-          aiType: aiClassification.type,
-          aiConfidence: aiClassification.confidence,
-          aiEmoji: aiClassification.emoji,
-          aiDescription: aiClassification.description,
-          aiLegalCategory: aiClassification.legalCategory,
-          aiSeverity: aiClassification.severity
+          classification: eventData?.classification || null,
         };
 
         // Add to buffer (memory-limited)

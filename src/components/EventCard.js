@@ -42,7 +42,7 @@ export default function EventCard({ event, onPress }) {
   const aiType = event.aiType || event.ai_type;
 
   const displayEmoji = categoryObj ? categoryObj.emoji : (aiEmoji || getDefaultEmoji(event.classification));
-  const displayType = categoryObj ? categoryObj.label : (aiType || event.classification || 'Lärm');
+  const displayType = categoryObj ? categoryObj.label : (aiType || translateClassification(event.classification) || 'Anderes');
 
   // Nachbar-Badge
   const neighborScore = event.neighbor_score || 0;
@@ -55,6 +55,21 @@ export default function EventCard({ event, onPress }) {
 
   // Dezibel: avg_decibel bevorzugen
   const displayDecibel = Math.round(event.avg_decibel || event.decibel || 0);
+
+  function translateClassification(cls) {
+    if (!cls) return null;
+    const map = {
+      'Loud': 'Anderes', 'Very Loud': 'Anderes', 'Moderate': 'Anderes',
+      'Gespräche / TV': 'Anderes', 'Ruhestörung': 'Anderes',
+      'Musik (Bass)': 'Musik/Bass', 'Musik (Starker Bass)': 'Musik/Bass',
+      'Trittschall / Schritte': 'Trittschall/Schritte',
+      'Laute Stimmen / Streit': 'Geschrei/Streit',
+      'Bauarbeiten / Bohren': 'Handwerk/Bohren', 'Klopfen / Hämmern': 'Handwerk/Bohren',
+      'Haustiere / Bellen': 'Hund/Tier',
+      'Maschinen / Brummen': 'Anderes',
+    };
+    return map[cls] || cls;
+  }
 
   function getDefaultEmoji(classification) {
     if (!classification) return '🔊';

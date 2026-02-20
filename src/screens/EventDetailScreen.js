@@ -90,13 +90,12 @@ export default function EventDetailScreen({ route, navigation }) {
     ? CATEGORY_OPTIONS.find(c => c.key === noiseCategory)
     : null;
 
-  // AI / Classification data
+  // Kategorie ist die einzige Klassifizierungsquelle
   const aiEmoji = categoryObj?.emoji || event.aiEmoji || event.ai_emoji || getDefaultEmoji(event.classification);
   const aiType = categoryObj?.label || event.aiType || event.ai_type || event.classification || 'Unbekannt';
-  const aiConfidence = event.aiConfidence || event.ai_confidence || 0;
-  const aiDescription = event.aiDescription || event.ai_description || '';
-  const aiLegalCategory = event.aiLegalCategory || event.ai_legal_category || '';
-  const aiSeverity = event.aiSeverity || event.ai_severity || 'medium';
+  const aiDescription = categoryObj?.description || event.aiDescription || event.ai_description || '';
+  const aiLegalCategory = categoryObj?.legalCategory || event.aiLegalCategory || event.ai_legal_category || '';
+  const aiSeverity = categoryObj?.severity || event.aiSeverity || event.ai_severity || 'medium';
 
   // Nachbar-Status
   const neighborScore = event.neighbor_score || 0;
@@ -363,9 +362,10 @@ export default function EventDetailScreen({ route, navigation }) {
             <Text style={styles.manualBadge}>✏️ Manuell geändert</Text>
           ) : null}
 
-          {aiConfidence > 0 && (
+          {/* Kategorie-Badge */}
+          {categoryObj && (
             <View style={styles.confidenceBadge}>
-              <Text style={styles.confidenceText}>KI-Konfidenz: {aiConfidence}%</Text>
+              <Text style={styles.confidenceText}>{categoryObj.description}</Text>
             </View>
           )}
 
@@ -418,24 +418,18 @@ export default function EventDetailScreen({ route, navigation }) {
         {/* AI Analysis Card */}
         {aiDescription ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🤖 KI-Analyse</Text>
+            <Text style={styles.sectionTitle}>📋 Kategorie-Details</Text>
             <Text style={styles.aiDescription}>{aiDescription}</Text>
             <View style={styles.aiGrid}>
               <View style={styles.aiGridItem}>
-                <Text style={styles.aiGridLabel}>Kategorie</Text>
-                <Text style={styles.aiGridValue}>
-                  {aiLegalCategory ? aiLegalCategory.replace(/_/g, ' ') : '-'}
-                </Text>
+                <Text style={styles.aiGridLabel}>Typ</Text>
+                <Text style={styles.aiGridValue}>{aiType}</Text>
               </View>
               <View style={styles.aiGridItem}>
                 <Text style={styles.aiGridLabel}>Schwere</Text>
                 <Text style={[styles.aiGridValue, { color: getSeverityColor(aiSeverity) }]}>
                   {getSeverityLabel(aiSeverity)}
                 </Text>
-              </View>
-              <View style={styles.aiGridItem}>
-                <Text style={styles.aiGridLabel}>Konfidenz</Text>
-                <Text style={styles.aiGridValue}>{aiConfidence}%</Text>
               </View>
             </View>
           </View>

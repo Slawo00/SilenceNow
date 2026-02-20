@@ -18,13 +18,13 @@ export const DEFAULTS = {
 };
 
 export const NOISE_CATEGORIES = {
-  MUSIK: { key: 'musik', label: 'Musik', emoji: '🎵' },
-  HUND: { key: 'hund', label: 'Hund', emoji: '🐕' },
-  TRITTSCHALL: { key: 'trittschall', label: 'Trittschall', emoji: '👣' },
-  GESCHREI: { key: 'geschrei', label: 'Geschrei', emoji: '🗣️' },
-  HANDWERK: { key: 'handwerk', label: 'Handwerk', emoji: '🔨' },
-  KINDER: { key: 'kinder', label: 'Kinder', emoji: '👶' },
-  SONSTIGES: { key: 'sonstiges', label: 'Sonstiges', emoji: '❓' },
+  MUSIK: { key: 'musik', label: 'Musik/Bass', emoji: '🎵', description: 'Musik oder Bass durch Wände/Decke', legalCategory: 'music', severity: 'medium' },
+  HUND: { key: 'hund', label: 'Hund/Tier', emoji: '🐕', description: 'Hundebellen oder Tiergeräusche', legalCategory: 'pets', severity: 'medium' },
+  TRITTSCHALL: { key: 'trittschall', label: 'Trittschall/Schritte', emoji: '👣', description: 'Schritte oder Trittgeräusche aus oberer Wohnung', legalCategory: 'footsteps', severity: 'medium' },
+  GESCHREI: { key: 'geschrei', label: 'Geschrei/Streit', emoji: '🗣️', description: 'Lautes Geschrei oder Streitgespräch', legalCategory: 'voices', severity: 'high' },
+  HANDWERK: { key: 'handwerk', label: 'Handwerk/Bohren', emoji: '🔨', description: 'Bohren, Hämmern oder Renovierungsarbeiten', legalCategory: 'construction', severity: 'high' },
+  KINDER: { key: 'kinder', label: 'Kinder', emoji: '👶', description: 'Kindergeräusche (Spielen, Schreien, Rennen)', legalCategory: 'children', severity: 'low' },
+  SONSTIGES: { key: 'sonstiges', label: 'Anderes', emoji: '❓', description: 'Nicht eindeutig klassifizierbarer Lärm', legalCategory: 'general', severity: 'medium' },
 };
 
 export const NEIGHBOR_THRESHOLDS = {
