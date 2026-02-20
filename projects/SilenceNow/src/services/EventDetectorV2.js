@@ -18,7 +18,7 @@ import MotionDetector from './MotionDetector';
 
 class EventDetectorV2 {
   constructor() {
-    this.dbService = new DatabaseService();
+    this.dbService = DatabaseService; // Already a singleton instance
     
     // Pattern analysis state
     this.measurementHistory = [];
