@@ -12,7 +12,7 @@ import {
 import { COLORS, DEFAULTS } from '../utils/constants';
 import AudioMonitor from '../services/AudioMonitorV2';
 import EventDetector from '../services/EventDetector';
-import NoiseRecordingService from '../services/NoiseRecordingService';
+// NoiseRecordingService removed - using AudioMonitor + EventDetector v1 directly
 import DatabaseService from '../services/DatabaseService';
 import NotificationService from '../services/NotificationService';
 import LiveMeter from '../components/LiveMeter';
@@ -81,45 +81,39 @@ export default function HomeScreen({ navigation }) {
 
   const startMonitoring = async () => {
     try {
-      // Use enhanced NoiseRecordingService
-      const success = await NoiseRecordingService.startRecording({
-        onStatusUpdate: (status) => {
-          if (status.data && status.data.decibel) {
-            setCurrentDecibel(status.data.decibel);
-          }
+      // Use AudioMonitorV2 directly with EventDetector v1 (has NeighborScoring)
+      const success = await AudioMonitor.startMonitoring(
+        (measurement) => {
+          setCurrentDecibel(measurement.decibel);
+          // Feed measurement to EventDetector v1 (with Nachbar-Scoring)
+          EventDetector.processMeasurement(measurement);
         },
-        onEventDetected: (event) => {
-          console.log('Enhanced event detected:', event);
-          loadData(); // Refresh event list
+        (event) => {
+          console.log('Event from AudioMonitor:', event);
+          loadData();
         },
-        onError: (error) => {
-          Alert.alert('Recording Error', error.message);
+        (error) => {
+          console.error('AudioMonitor error:', error);
+          Alert.alert('Recording Error', error.message || String(error));
         }
-      });
+      );
       
       if (success) {
         setIsMonitoring(true);
-        Alert.alert('Enhanced Monitoring', 'Started advanced noise analysis with legal impact assessment');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to start enhanced monitoring: ' + error.message);
+      Alert.alert('Error', 'Failed to start monitoring: ' + error.message);
     }
   };
 
   const stopMonitoring = async () => {
     try {
-      const sessionSummary = await NoiseRecordingService.stopRecording();
+      // Force-end any active event in EventDetector
+      await EventDetector.forceEndEvent();
+      await AudioMonitor.stopMonitoring();
       setIsMonitoring(false);
       setCurrentDecibel(0);
       await loadData();
-      
-      // Show session summary
-      if (sessionSummary && sessionSummary.eventCount > 0) {
-        Alert.alert(
-          'Session Complete', 
-          `Recorded ${sessionSummary.eventCount} events. Legal Impact Score: ${sessionSummary.legalImpactScore}/100`
-        );
-      }
     } catch (error) {
       Alert.alert('Stop Error', error.message);
     }
