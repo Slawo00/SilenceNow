@@ -70,6 +70,14 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - Fehler nicht wiederholen - dokumentiere Lösungen
 - Zeige konkrete Verbesserungen und Maßnahmen auf
 
+## 🚨 SILENCENOW PROJEKT-STRUKTUR — NIEMALS VERGESSEN!
+**Das Replit-Projekt läuft aus dem ROOT `src/` Ordner!**
+- `App.js` importiert `./src/navigation/AppNavigator` 
+- **RICHTIG:** Änderungen in `/root/clawd/src/` machen
+- **FALSCH:** Änderungen in `/root/clawd/projects/SilenceNow/src/` machen
+- `projects/SilenceNow/` ist eine KOPIE, wird von der App NICHT geladen!
+- **Diesen Fehler haben wir 3x gemacht. NIE WIEDER.**
+
 ## External vs Internal
 
 **Safe to do freely:**

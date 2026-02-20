@@ -58,6 +58,12 @@ node real_screenshot_tool.js http://localhost:3000 /tmp/reports.png 1920 1080
 - ✅ **Automatische Reports** mit Dateigröße und Status
 - ✅ **Beweisbar** - Echte visuelle Testbelege
 
+## 🚨 SILENCENOW — KRITISCH!
+**App läuft aus `/root/clawd/src/` — NICHT aus `projects/SilenceNow/src/`!**
+- `App.js` → `./src/navigation/AppNavigator`
+- ALLE Änderungen in `src/` machen, NICHT in `projects/SilenceNow/src/`
+- 3x denselben Fehler gemacht. Slawo war zu Recht wütend.
+
 ## What Goes Here
 
 Things like:
