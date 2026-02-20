@@ -1,6 +1,6 @@
 # SilenceNow - Project Status & Progress
 
-## CURRENT STATE (2026-02-19 15:00 UTC)
+## CURRENT STATE (2026-02-20 20:16 UTC)
 
 ### ✅ COMPLETED
 - React Native App mit Expo Mobile Setup
@@ -20,6 +20,9 @@
 - **Zeuge hinzufügen** (commit 8858367) - Modal mit Name, Kontakt, Beziehung, Aussage → SQLite gespeichert
 - **Notiz hinzufügen** (commit 8858367) - Modal mit Kategorien (Allgemein/Beobachtung/Auswirkung/Maßnahme)
 - **ReportsScreen in Navigation** (commit 8858367) - Von HomeScreen erreichbar
+- **NOISE SOURCE DETECTION** (commit e3bcb05) - frequencyAnalysis.js, MotionDetector.js, Enhanced EventDetectorV2
+- **BUG FIX: NotificationService** (commit e3bcb05) - iOS sound:nil crash behoben
+- **BUG FIX: Invalid Date** (commit e3bcb05) - Robustere Timestamp-Parsing
 
 ### 🔧 NÄCHSTE AUFGABEN (aus REQUIREMENTS_ANALYSIS)
 1. ❌ **Musterbriefe** - Templates für Vermieter-Beschwerden
@@ -28,6 +31,8 @@
 4. ❌ **Brand Identity "Quiet Justice"** - Farben, Logo, Tonalität
 5. ❌ **Landing Page + Stripe** - Revenue Pipeline
 6. ❌ **Frequenz-Werte Skalierung** - Werte zu niedrig (0.3 statt 20-30)
+7. ❌ **expo-sensors installieren** - MotionDetector braucht es (Slawo muss `npx expo install expo-sensors` ausführen)
+8. ❌ **EventDetailScreen_UPDATE.js** integrieren - Enhanced UI mit Source Detection Display
 
 ### 🔧 TECHNICAL SETUP
 - **Expo Version**: Latest

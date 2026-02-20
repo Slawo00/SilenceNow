@@ -31,6 +31,9 @@ class NoiseRecordingService {
       noisyPeriods: 0
     };
     
+    // Initialize EventDetectorV2
+    this.eventDetector = new EventDetectorV2();
+    
     // Enhanced event classification
     this.eventPatterns = new Map();
     this.backgroundNoise = null;
