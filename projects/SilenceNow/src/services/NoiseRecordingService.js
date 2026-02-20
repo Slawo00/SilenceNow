@@ -31,8 +31,8 @@ class NoiseRecordingService {
       noisyPeriods: 0
     };
     
-    // Initialize EventDetectorV2
-    this.eventDetector = new EventDetectorV2();
+    // EventDetectorV2 - lazy initialized in startRecording()
+    this.eventDetector = null;
     
     // Enhanced event classification
     this.eventPatterns = new Map();
@@ -59,6 +59,11 @@ class NoiseRecordingService {
 
     try {
       console.log('[NoiseRecording] Starting enhanced recording session');
+      
+      // Lazy-initialize EventDetectorV2
+      if (!this.eventDetector) {
+        this.eventDetector = new EventDetectorV2();
+      }
       
       // Initialize EventDetectorV2 first
       const detectorReady = await this.eventDetector.initialize();
@@ -107,7 +112,9 @@ class NoiseRecordingService {
     
     try {
       // Stop EventDetectorV2 and cleanup
-      await this.eventDetector.stop();
+      if (this.eventDetector) {
+        await this.eventDetector.stop();
+      }
       
       // Stop AudioMonitor
       await AudioMonitorV2.stopMonitoring();
@@ -144,7 +151,9 @@ class NoiseRecordingService {
     this._analyzeNoisePattern(measurement);
     
     // 🔥 NEW: Process through EventDetectorV2 with advanced analysis
-    const eventData = await this.eventDetector.processMeasurement(measurement, audioBuffer);
+    const eventData = this.eventDetector 
+      ? await this.eventDetector.processMeasurement(measurement, audioBuffer)
+      : null;
     
     if (eventData) {
       this.eventCount++;
