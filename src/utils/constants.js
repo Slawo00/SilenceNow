@@ -10,9 +10,46 @@ export const COLORS = {
 export const DEFAULTS = {
   THRESHOLD_DB: 55,
   SAMPLE_INTERVAL: 2000,
-  EVENT_MIN_DURATION: 10000,
-  EVENT_MERGE_GAP: 30000,
+  EVENT_MIN_DURATION: 30000,       // 30 Sekunden Mindestdauer
+  EVENT_MIN_DURATION_LOUD: 10000,  // 10 Sekunden bei >80 dB
+  EVENT_MERGE_GAP: 180000,         // 3 Minuten Zusammenführungs-Lücke
   QUIET_BASELINE: 40,
+  LOUD_THRESHOLD_DB: 80,           // Schwelle für "sehr laut"
+};
+
+export const NOISE_CATEGORIES = {
+  MUSIK: { key: 'musik', label: 'Musik', emoji: '🎵' },
+  HUND: { key: 'hund', label: 'Hund', emoji: '🐕' },
+  TRITTSCHALL: { key: 'trittschall', label: 'Trittschall', emoji: '👣' },
+  GESCHREI: { key: 'geschrei', label: 'Geschrei', emoji: '🗣️' },
+  HANDWERK: { key: 'handwerk', label: 'Handwerk', emoji: '🔨' },
+  KINDER: { key: 'kinder', label: 'Kinder', emoji: '👶' },
+  SONSTIGES: { key: 'sonstiges', label: 'Sonstiges', emoji: '❓' },
+};
+
+export const NEIGHBOR_THRESHOLDS = {
+  AUTO_NEIGHBOR: 60,   // Score > 60: Auto "Nachbar"
+  UNCONFIRMED: 30,     // Score 30-60: "Unbestätigt"
+  DISCARD: 30,         // Score < 30: Nicht loggen
+};
+
+export const PRIVACY_CONSTANTS = {
+  // Battery-optimized sampling rates
+  BACKGROUND_SAMPLE_RATE: 5000,  // 5 seconds in background
+  ACTIVE_SAMPLE_RATE: 1000,      // 1 second when active
+  
+  // Privacy thresholds
+  MAX_BUFFER_SIZE: 100,           // Limit memory usage
+  AUTO_CLEANUP_INTERVAL: 300000,  // 5 minutes
+  
+  // Legal compliance
+  NO_AUDIO_STORAGE: true,         // NEVER store audio
+  DSGVO_COMPLIANT: true,          // GDPR compliant
+  SECTION_201_COMPLIANT: true,    // §201 StGB compliant
+  
+  // Event detection
+  BASELINE_CALIBRATION_TIME: 30000, // 30 seconds to establish baseline
+  EVENT_CONFIDENCE_THRESHOLD: 70,   // Minimum confidence for events
 };
 
 export const FREQ_BANDS = {

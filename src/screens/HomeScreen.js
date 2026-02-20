@@ -10,11 +10,14 @@ import {
   AppState,
 } from 'react-native';
 import { COLORS, DEFAULTS } from '../utils/constants';
-import AudioMonitor from '../services/AudioMonitor';
+import AudioMonitor from '../services/AudioMonitorV2';
 import EventDetector from '../services/EventDetector';
+// NoiseRecordingService removed - using AudioMonitor + EventDetector v1 directly
 import DatabaseService from '../services/DatabaseService';
+import NotificationService from '../services/NotificationService';
 import LiveMeter from '../components/LiveMeter';
 import EventCard from '../components/EventCard';
+import NightReport from '../components/NightReport';
 
 export default function HomeScreen({ navigation }) {
   const [isMonitoring, setIsMonitoring] = useState(false);
@@ -30,6 +33,11 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadData();
+
+    // Initialize notifications
+    NotificationService.initialize().catch(err => 
+      console.warn('Notifications init failed:', err.message)
+    );
 
     EventDetector.setOnEventSaved(() => {
       loadData();
@@ -73,22 +81,42 @@ export default function HomeScreen({ navigation }) {
 
   const startMonitoring = async () => {
     try {
-      await AudioMonitor.startMonitoring((measurement) => {
-        setCurrentDecibel(measurement.decibel);
-        EventDetector.processMeasurement(measurement);
-      });
-      setIsMonitoring(true);
+      // Use AudioMonitorV2 directly with EventDetector v1 (has NeighborScoring)
+      const success = await AudioMonitor.startMonitoring(
+        (measurement) => {
+          setCurrentDecibel(measurement.decibel);
+          // Feed measurement to EventDetector v1 (with Nachbar-Scoring)
+          EventDetector.processMeasurement(measurement);
+        },
+        (event) => {
+          console.log('Event from AudioMonitor:', event);
+          loadData();
+        },
+        (error) => {
+          console.error('AudioMonitor error:', error);
+          Alert.alert('Recording Error', error.message || String(error));
+        }
+      );
+      
+      if (success) {
+        setIsMonitoring(true);
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to start monitoring: ' + error.message);
     }
   };
 
   const stopMonitoring = async () => {
-    await EventDetector.forceEndEvent();
-    await AudioMonitor.stopMonitoring();
-    setIsMonitoring(false);
-    setCurrentDecibel(0);
-    await loadData();
+    try {
+      // Force-end any active event in EventDetector
+      await EventDetector.forceEndEvent();
+      await AudioMonitor.stopMonitoring();
+      setIsMonitoring(false);
+      setCurrentDecibel(0);
+      await loadData();
+    } catch (error) {
+      Alert.alert('Stop Error', error.message);
+    }
   };
 
   const toggleMonitoring = () => {
@@ -101,10 +129,10 @@ export default function HomeScreen({ navigation }) {
 
   const estimateRentReduction = () => {
     const eventsPerWeek = stats.totalEvents / 2;
-    if (eventsPerWeek >= 10) return '180\u20AC/month';
-    if (eventsPerWeek >= 5) return '90-180\u20AC/month';
-    if (eventsPerWeek >= 2) return '45-90\u20AC/month';
-    return 'Insufficient data';
+    if (eventsPerWeek >= 10) return '180€/Monat';
+    if (eventsPerWeek >= 5) return '90-180€/Monat';
+    if (eventsPerWeek >= 2) return '45-90€/Monat';
+    return 'Noch nicht genug Daten';
   };
 
   return (
@@ -124,65 +152,68 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.statusCard}>
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>
-            Monitoring: {isMonitoring ? '● Active' : '○ Paused'}
+            Monitoring: {isMonitoring ? '● Aktiv' : '○ Pausiert'}
           </Text>
           <TouchableOpacity
             style={[styles.toggleButton, isMonitoring && styles.toggleButtonActive]}
             onPress={toggleMonitoring}
           >
             <Text style={styles.toggleButtonText}>
-              {isMonitoring ? 'Pause' : 'Start'}
+              {isMonitoring ? 'Stopp' : 'Start'}
             </Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.statusSubtext}>
           {isMonitoring
-            ? 'Monitoring since: Just now'
-            : 'Tap Start to begin monitoring'}
+            ? 'Überwachung läuft – Lärmereignisse werden automatisch erkannt'
+            : 'Tippe Start um die Lärmüberwachung zu beginnen'}
         </Text>
       </View>
 
       {isMonitoring && <LiveMeter decibel={currentDecibel} />}
 
+      <NightReport
+        onDismiss={() => loadData()}
+        onEventPress={(event) => navigation.navigate('EventDetail', { event })}
+      />
+
       <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>14-Day Summary</Text>
+        <Text style={styles.statsTitle}>14-Tage Zusammenfassung</Text>
 
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.totalEvents}</Text>
-            <Text style={styles.statLabel}>Events</Text>
+            <Text style={styles.statLabel}>Ereignisse</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.avgDecibel} dB</Text>
-            <Text style={styles.statLabel}>Avg Level</Text>
+            <Text style={styles.statLabel}>Ø Pegel</Text>
           </View>
         </View>
 
         <View style={styles.estimateBox}>
-          <Text style={styles.estimateLabel}>Estimated Rent Reduction:</Text>
+          <Text style={styles.estimateLabel}>Geschätzte Mietminderung:</Text>
           <Text style={styles.estimateValue}>{estimateRentReduction()}</Text>
         </View>
 
-        {stats.totalEvents >= 10 && (
-          <TouchableOpacity
-            style={styles.reportButton}
-            onPress={() => Alert.alert('Coming Soon', 'Report generation will be available in next version')}
-          >
-            <Text style={styles.reportButtonText}>Generate Report</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.reportButton}
+          onPress={() => navigation.navigate('Reports')}
+        >
+          <Text style={styles.reportButtonText}>⚖️ Rechtliche Bewertung & Reports</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.eventsSection}>
-        <Text style={styles.sectionTitle}>Recent Events</Text>
+        <Text style={styles.sectionTitle}>Letzte Ereignisse</Text>
         {events.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🔇</Text>
-            <Text style={styles.emptyText}>No events yet</Text>
+            <Text style={styles.emptyText}>Noch keine Ereignisse</Text>
             <Text style={styles.emptySubtext}>
               {isMonitoring
-                ? 'Monitoring is active. Events will appear here.'
-                : 'Start monitoring to detect noise events.'}
+                ? 'Überwachung aktiv. Ereignisse erscheinen hier automatisch.'
+                : 'Starte die Überwachung um Lärmereignisse zu erkennen.'}
             </Text>
           </View>
         ) : (
