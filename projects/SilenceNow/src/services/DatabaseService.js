@@ -90,6 +90,15 @@ class DatabaseService {
         'ALTER TABLE noise_events ADD COLUMN ai_description TEXT',
         'ALTER TABLE noise_events ADD COLUMN ai_legal_category TEXT',
         'ALTER TABLE noise_events ADD COLUMN ai_severity TEXT',
+        // V4 Migration: start_time/end_time + Nachbar-Erkennung + Kategorisierung
+        'ALTER TABLE noise_events ADD COLUMN start_time TEXT',
+        'ALTER TABLE noise_events ADD COLUMN end_time TEXT',
+        'ALTER TABLE noise_events ADD COLUMN neighbor_score INTEGER DEFAULT 0',
+        'ALTER TABLE noise_events ADD COLUMN source_confirmed TEXT DEFAULT "unconfirmed"',
+        'ALTER TABLE noise_events ADD COLUMN noise_category TEXT',
+        'ALTER TABLE noise_events ADD COLUMN category_auto INTEGER DEFAULT 1',
+        'ALTER TABLE noise_events ADD COLUMN avg_decibel REAL DEFAULT 0',
+        'ALTER TABLE noise_events ADD COLUMN peak_decibel REAL DEFAULT 0',
       ];
 
       for (const migration of migrations) {
@@ -98,6 +107,21 @@ class DatabaseService {
         } catch (e) {
           // Column already exists - ignore
         }
+      }
+
+      // V4 Data Migration: Migrate timestamp/duration → start_time/end_time for existing rows
+      try {
+        await this.db.execAsync(`
+          UPDATE noise_events 
+          SET start_time = timestamp, 
+              end_time = datetime(timestamp, '+' || COALESCE(duration, 0) || ' seconds'),
+              avg_decibel = COALESCE(decibel, 0),
+              peak_decibel = COALESCE(decibel, 0)
+          WHERE start_time IS NULL AND timestamp IS NOT NULL
+        `);
+        console.log('[DB] V4 migration: timestamp/duration → start_time/end_time completed');
+      } catch (migrationError) {
+        console.log('[DB] V4 migration skipped (already done or no data):', migrationError.message);
       }
 
       await this.db.execAsync(`
@@ -191,8 +215,9 @@ class DatabaseService {
          classification, detailed_type, likely_source, legal_relevance, legal_score,
          is_nighttime_violation, time_context, health_impact, duration_impact,
          ai_type, ai_confidence, ai_emoji, ai_description, ai_legal_category, ai_severity,
-         source_detection, octave_bands, dba_dbc_data, motion_data, confidence_score) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         start_time, end_time, neighbor_score, source_confirmed, noise_category, category_auto,
+         avg_decibel, peak_decibel) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event.timestamp,
           event.decibel,
@@ -217,12 +242,15 @@ class DatabaseService {
           event.aiDescription || null,
           event.aiLegalCategory || null,
           event.aiSeverity || null,
-          // 🔥 NEW: Advanced analysis data
-          event.source_detection || null,
-          event.octave_bands || null,
-          event.dba_dbc_data || null,
-          event.motion_data || null,
-          event.confidence_score || 50
+          // V4: start_time/end_time + Nachbar + Kategorie
+          event.start_time || event.timestamp,
+          event.end_time || null,
+          event.neighbor_score || 0,
+          event.source_confirmed || 'unconfirmed',
+          event.noise_category || null,
+          event.category_auto ? 1 : 0,
+          event.avg_decibel || event.decibel || 0,
+          event.peak_decibel || event.decibel || 0,
         ]
       );
 
@@ -490,6 +518,118 @@ class DatabaseService {
         }
       }
       return this.memoryCache.filter(e => (e.legalScore || 0) >= minScore && e.timestamp > cutoff);
+    }
+  }
+
+  // ============================================================
+  // UPDATE / DELETE SINGLE EVENTS
+  // ============================================================
+
+  async updateEvent(eventId, updates) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        const setClauses = [];
+        const values = [];
+        
+        for (const [key, value] of Object.entries(updates)) {
+          setClauses.push(`${key} = ?`);
+          values.push(value);
+        }
+        
+        if (setClauses.length === 0) return false;
+        
+        values.push(eventId);
+        await this.db.runAsync(
+          `UPDATE noise_events SET ${setClauses.join(', ')} WHERE id = ?`,
+          values
+        );
+        console.log('[DB] Event updated:', eventId);
+        return true;
+      } catch (error) {
+        console.error('[DB] Update event error:', error);
+        return false;
+      }
+    } else {
+      // Web/memory fallback
+      const idx = this.memoryCache.findIndex(e => e.id === eventId);
+      if (idx !== -1) {
+        Object.assign(this.memoryCache[idx], updates);
+        return true;
+      }
+      return false;
+    }
+  }
+
+  async deleteEvent(eventId) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        await this.db.runAsync('DELETE FROM event_witnesses WHERE event_id = ?', [eventId]);
+        await this.db.runAsync('DELETE FROM event_notes WHERE event_id = ?', [eventId]);
+        await this.db.runAsync('DELETE FROM noise_events WHERE id = ?', [eventId]);
+        console.log('[DB] Event deleted:', eventId);
+        return true;
+      } catch (error) {
+        console.error('[DB] Delete event error:', error);
+        return false;
+      }
+    } else {
+      this.memoryCache = this.memoryCache.filter(e => e.id !== eventId);
+      return true;
+    }
+  }
+
+  async confirmNeighborBatch(eventIds, confirmed) {
+    await this._ensureReady();
+    
+    if (this.useLocalDB) {
+      try {
+        const placeholders = eventIds.map(() => '?').join(',');
+        await this.db.runAsync(
+          `UPDATE noise_events SET source_confirmed = ? WHERE id IN (${placeholders})`,
+          [confirmed ? 'neighbor' : 'not_neighbor', ...eventIds]
+        );
+        console.log('[DB] Batch neighbor confirm:', eventIds.length, 'events');
+        return true;
+      } catch (error) {
+        console.error('[DB] Batch confirm error:', error);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  async getNightEvents(dateString) {
+    await this._ensureReady();
+    
+    // Get events from 22:00 previous day to 06:00 given day
+    const nightStart = `${dateString}T22:00:00.000Z`;
+    const dayBefore = new Date(dateString);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+    const prevNightStart = dayBefore.toISOString().split('T')[0] + 'T22:00:00.000Z';
+    const nightEnd = `${dateString}T06:00:00.000Z`;
+    
+    if (this.useLocalDB) {
+      try {
+        return await this.db.getAllAsync(
+          `SELECT * FROM noise_events 
+           WHERE (start_time >= ? AND start_time < ?) 
+              OR (timestamp >= ? AND timestamp < ?)
+           ORDER BY COALESCE(start_time, timestamp) ASC`,
+          [prevNightStart, nightEnd, prevNightStart, nightEnd]
+        );
+      } catch (error) {
+        console.error('[DB] getNightEvents error:', error);
+        return [];
+      }
+    } else {
+      return this.memoryCache.filter(e => {
+        const ts = e.start_time || e.timestamp;
+        return ts >= prevNightStart && ts < nightEnd;
+      });
     }
   }
 

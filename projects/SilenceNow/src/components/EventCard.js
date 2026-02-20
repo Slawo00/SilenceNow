@@ -1,30 +1,60 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS } from '../utils/constants';
+import { COLORS, NOISE_CATEGORIES } from '../utils/constants';
 
 export default function EventCard({ event, onPress }) {
-  const date = new Date(event.timestamp);
-  const timeString = date.toLocaleTimeString('de-DE', {
+  // Start/End time aus neuen Feldern oder Fallback
+  const startTime = event.start_time || event.timestamp;
+  const endTime = event.end_time;
+
+  const startDate = new Date(startTime);
+  const endDate = endTime ? new Date(endTime) : null;
+
+  const startTimeStr = startDate.toLocaleTimeString('de-DE', {
     hour: '2-digit',
     minute: '2-digit',
   });
-  const dateString = date.toLocaleDateString('de-DE', {
+  const endTimeStr = endDate
+    ? endDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+    : null;
+
+  const dateString = startDate.toLocaleDateString('de-DE', {
     day: '2-digit',
     month: '2-digit',
   });
 
-  // Use AI classification if available
+  // Dauer berechnen
+  let durationMin = 0;
+  if (startDate && endDate) {
+    durationMin = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
+  } else if (event.duration) {
+    durationMin = Math.round(event.duration / 60);
+  }
+
+  // Kategorie-Emoji (noise_category hat Vorrang)
+  const noiseCategory = event.noise_category;
+  const categoryObj = noiseCategory
+    ? Object.values(NOISE_CATEGORIES).find(c => c.key === noiseCategory)
+    : null;
+
+  // AI classification als Fallback
   const aiEmoji = event.aiEmoji || event.ai_emoji;
   const aiType = event.aiType || event.ai_type;
-  const aiConfidence = event.aiConfidence || event.ai_confidence || 0;
-  const aiSeverity = event.aiSeverity || event.ai_severity;
 
-  const displayEmoji = aiEmoji || getDefaultEmoji(event.classification);
-  const displayType = aiType || event.classification || 'Laut';
+  const displayEmoji = categoryObj ? categoryObj.emoji : (aiEmoji || getDefaultEmoji(event.classification));
+  const displayType = categoryObj ? categoryObj.label : (aiType || event.classification || 'Lärm');
 
-  // Night violation badge
-  const hour = date.getHours();
+  // Nachbar-Badge
+  const neighborScore = event.neighbor_score || 0;
+  const sourceConfirmed = event.source_confirmed || 'unconfirmed';
+  const isNeighbor = sourceConfirmed === 'neighbor' || neighborScore > 60;
+
+  // Nacht-Badge
+  const hour = startDate.getHours();
   const isNighttime = hour >= 22 || hour < 6;
+
+  // Dezibel: avg_decibel bevorzugen
+  const displayDecibel = Math.round(event.avg_decibel || event.decibel || 0);
 
   function getDefaultEmoji(classification) {
     if (!classification) return '🔊';
@@ -45,32 +75,41 @@ export default function EventCard({ event, onPress }) {
     return COLORS.ELECTRIC_GREEN;
   };
 
+  // Zeitformat: "23:15 - 23:22 · 7 Min"
+  const timeDisplay = endTimeStr
+    ? `${startTimeStr} - ${endTimeStr} · ${durationMin < 1 ? '<1' : durationMin} Min`
+    : `${dateString} · ${startTimeStr}`;
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.leftSection}>
         <Text style={styles.emoji}>{displayEmoji}</Text>
         <View style={styles.textArea}>
-          <Text style={styles.classification} numberOfLines={1}>{displayType}</Text>
-          <Text style={styles.time}>{dateString} · {timeString}</Text>
-          {aiConfidence > 0 && (
-            <Text style={styles.confidence}>KI: {aiConfidence}%</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.classification} numberOfLines={1}>{displayType}</Text>
+            {isNeighbor && (
+              <Text style={styles.neighborBadge}>🏠</Text>
+            )}
+          </View>
+          <Text style={styles.time}>{timeDisplay}</Text>
+          {!endTimeStr && (
+            <Text style={styles.time}>{dateString}</Text>
           )}
         </View>
       </View>
       <View style={styles.rightSection}>
-        <Text style={[styles.decibel, { color: getDecibelColor(event.decibel) }]}>
-          {event.decibel} dB
+        <Text style={[styles.decibel, { color: getDecibelColor(displayDecibel) }]}>
+          {displayDecibel} dB
         </Text>
-        {event.duration > 0 && (
-          <Text style={styles.duration}>
-            {event.duration >= 60
-              ? `${Math.floor(event.duration / 60)}m ${event.duration % 60}s`
-              : `${event.duration}s`}
-          </Text>
+        {event.peak_decibel > 0 && event.peak_decibel !== displayDecibel && (
+          <Text style={styles.peakDb}>↑{Math.round(event.peak_decibel)}</Text>
         )}
-        {isNighttime && (
-          <Text style={styles.nightBadge}>🌙</Text>
-        )}
+        <View style={styles.badges}>
+          {isNighttime && <Text style={styles.badge}>🌙</Text>}
+          {sourceConfirmed === 'unconfirmed' && neighborScore >= 30 && (
+            <Text style={styles.badge}>❓</Text>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -98,19 +137,22 @@ const styles = StyleSheet.create({
   textArea: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   classification: {
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.MIDNIGHT_BLUE,
   },
+  neighborBadge: {
+    fontSize: 14,
+  },
   time: {
     fontSize: 12,
     color: COLORS.WARM_GREY,
-    marginTop: 2,
-  },
-  confidence: {
-    fontSize: 11,
-    color: COLORS.ELECTRIC_GREEN,
     marginTop: 2,
   },
   rightSection: {
@@ -121,13 +163,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  duration: {
-    fontSize: 12,
+  peakDb: {
+    fontSize: 11,
     color: COLORS.WARM_GREY,
+    marginTop: 1,
+  },
+  badges: {
+    flexDirection: 'row',
+    gap: 4,
     marginTop: 2,
   },
-  nightBadge: {
+  badge: {
     fontSize: 14,
-    marginTop: 2,
   },
 });

@@ -17,6 +17,7 @@ import DatabaseService from '../services/DatabaseService';
 import NotificationService from '../services/NotificationService';
 import LiveMeter from '../components/LiveMeter';
 import EventCard from '../components/EventCard';
+import NightReport from '../components/NightReport';
 
 export default function HomeScreen({ navigation }) {
   const [isMonitoring, setIsMonitoring] = useState(false);
@@ -176,6 +177,11 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {isMonitoring && <LiveMeter decibel={currentDecibel} />}
+
+      <NightReport
+        onDismiss={() => loadData()}
+        onEventPress={(event) => navigation.navigate('EventDetail', { event })}
+      />
 
       <View style={styles.statsCard}>
         <Text style={styles.statsTitle}>14-Tage Zusammenfassung</Text>
