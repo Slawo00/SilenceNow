@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -30,6 +31,13 @@ export default function HomeScreen({ navigation }) {
   });
   const [refreshing, setRefreshing] = useState(false);
   const appState = useRef(AppState.currentState);
+
+  // Reload events when screen comes back into focus (e.g. after editing)
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   useEffect(() => {
     loadData();

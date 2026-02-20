@@ -130,22 +130,34 @@ export default function EventDetailScreen({ route, navigation }) {
 
   // ============ CATEGORY CHANGE ============
 
+  const getEventId = () => event.id || event.rowid || null;
+
   const handleCategoryChange = async (category) => {
     setShowCategoryDropdown(false);
-    if (!event.id) return;
+    const eventId = getEventId();
+    if (!eventId) {
+      console.warn('[EventDetail] No event ID for category update');
+      Alert.alert('Fehler', 'Event hat keine ID — Änderung kann nicht gespeichert werden.');
+      return;
+    }
 
     try {
-      await DatabaseService.updateEvent(event.id, {
+      const success = await DatabaseService.updateEvent(eventId, {
         noise_category: category.key,
         category_auto: 0,
       });
-      setEvent(prev => ({
-        ...prev,
-        noise_category: category.key,
-        category_auto: false,
-      }));
-      Alert.alert('✅ Kategorie geändert', `Kategorie auf "${category.emoji} ${category.label}" gesetzt.`);
+      if (success) {
+        setEvent(prev => ({
+          ...prev,
+          noise_category: category.key,
+          category_auto: false,
+        }));
+        Alert.alert('✅ Gespeichert', `Kategorie auf "${category.emoji} ${category.label}" geändert.`);
+      } else {
+        Alert.alert('Fehler', 'Änderung konnte nicht gespeichert werden.');
+      }
     } catch (error) {
+      console.error('[EventDetail] Category update error:', error);
       Alert.alert('Fehler', 'Kategorie konnte nicht geändert werden.');
     }
   };
@@ -153,22 +165,38 @@ export default function EventDetailScreen({ route, navigation }) {
   // ============ NEIGHBOR CONFIRMATION ============
 
   const handleConfirmNeighbor = async () => {
-    if (!event.id) return;
+    const eventId = getEventId();
+    if (!eventId) {
+      Alert.alert('Fehler', 'Event hat keine ID.');
+      return;
+    }
     try {
-      await DatabaseService.updateEvent(event.id, { source_confirmed: 'neighbor' });
-      setEvent(prev => ({ ...prev, source_confirmed: 'neighbor' }));
-      Alert.alert('🏠 Bestätigt', 'Event als Nachbar-Lärm bestätigt.');
+      const success = await DatabaseService.updateEvent(eventId, { source_confirmed: 'neighbor' });
+      if (success) {
+        setEvent(prev => ({ ...prev, source_confirmed: 'neighbor' }));
+        Alert.alert('🏠 Gespeichert', 'Als Nachbar-Lärm bestätigt.');
+      } else {
+        Alert.alert('Fehler', 'Konnte nicht gespeichert werden.');
+      }
     } catch (error) {
       Alert.alert('Fehler', 'Konnte nicht bestätigt werden.');
     }
   };
 
   const handleDenyNeighbor = async () => {
-    if (!event.id) return;
+    const eventId = getEventId();
+    if (!eventId) {
+      Alert.alert('Fehler', 'Event hat keine ID.');
+      return;
+    }
     try {
-      await DatabaseService.updateEvent(event.id, { source_confirmed: 'not_neighbor' });
-      setEvent(prev => ({ ...prev, source_confirmed: 'not_neighbor' }));
-      Alert.alert('✖ Kein Nachbar', 'Event als "Kein Nachbar" markiert.');
+      const success = await DatabaseService.updateEvent(eventId, { source_confirmed: 'not_neighbor' });
+      if (success) {
+        setEvent(prev => ({ ...prev, source_confirmed: 'not_neighbor' }));
+        Alert.alert('✖ Gespeichert', 'Als "Kein Nachbar" markiert.');
+      } else {
+        Alert.alert('Fehler', 'Konnte nicht gespeichert werden.');
+      }
     } catch (error) {
       Alert.alert('Fehler', 'Konnte nicht geändert werden.');
     }
@@ -186,9 +214,10 @@ export default function EventDetailScreen({ route, navigation }) {
           text: 'Löschen',
           style: 'destructive',
           onPress: async () => {
-            if (!event.id) return;
+            const eventId = getEventId();
+            if (!eventId) return;
             try {
-              await DatabaseService.deleteEvent(event.id);
+              await DatabaseService.deleteEvent(eventId);
               Alert.alert('🗑️ Gelöscht', 'Event wurde gelöscht.');
               navigation.goBack();
             } catch (error) {

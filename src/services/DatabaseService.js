@@ -552,13 +552,32 @@ class DatabaseService {
         return false;
       }
     } else {
-      // Web/memory fallback
+      // Web/memory fallback — update memoryCache AND Supabase
       const idx = this.memoryCache.findIndex(e => e.id === eventId);
       if (idx !== -1) {
         Object.assign(this.memoryCache[idx], updates);
-        return true;
       }
-      return false;
+
+      // Persist to Supabase if available
+      if (supabase) {
+        try {
+          const { error } = await supabase
+            .from('noise_events')
+            .update(updates)
+            .eq('id', eventId);
+          if (error) {
+            console.error('[DB] Supabase update error:', error);
+            return idx !== -1; // memoryCache update still counts
+          }
+          console.log('[DB] Event updated in Supabase:', eventId);
+          return true;
+        } catch (error) {
+          console.error('[DB] Supabase update error:', error);
+          return idx !== -1;
+        }
+      }
+
+      return idx !== -1;
     }
   }
 
