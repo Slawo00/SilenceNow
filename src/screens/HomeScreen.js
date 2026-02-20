@@ -75,12 +75,15 @@ export default function HomeScreen({ navigation }) {
       setAllEvents(fetchedEvents.slice(0, 50));
       setEvents(fetchedEvents.slice(0, 50));
 
-      // Nur rechtlich relevante Events zählen
-      const relevant = await DatabaseService.getRelevantStats(14);
+      // Stats aus denselben Events berechnen — gleiche Logik wie Filter
+      const relevantEvents = fetchedEvents.filter(isRelevantEvent);
+      const avgDb = relevantEvents.length > 0
+        ? Math.round(relevantEvents.reduce((sum, e) => sum + (e.avg_decibel || e.decibel || 0), 0) / relevantEvents.length)
+        : 0;
 
       setStats({
-        totalEvents: relevant.count,
-        avgDecibel: relevant.avgDecibel,
+        totalEvents: relevantEvents.length,
+        avgDecibel: avgDb,
         daysMonitored: 14,
       });
     } catch (error) {
