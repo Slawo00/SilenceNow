@@ -13,6 +13,8 @@
 
 import { PRIVACY_CONSTANTS, DEFAULTS } from '../utils/constants';
 import DatabaseService from './DatabaseService';
+import { performCompleteAudioAnalysis } from '../utils/frequencyAnalysis';
+import MotionDetector from './MotionDetector';
 
 class EventDetectorV2 {
   constructor() {
@@ -49,7 +51,14 @@ class EventDetectorV2 {
   async initialize() {
     try {
       await this.dbService.init();
-      console.log('[EventDetector] Initialized with database connection');
+      
+      // Initialize Motion Detection
+      const motionStarted = await MotionDetector.startMonitoring();
+      if (motionStarted) {
+        console.log('[EventDetector] Motion detection enabled');
+      }
+      
+      console.log('[EventDetector] Initialized with advanced noise source detection');
       return true;
     } catch (error) {
       console.error('[EventDetector] Initialization failed:', error);
@@ -60,10 +69,23 @@ class EventDetectorV2 {
   /**
    * Process new measurement and detect events
    * @param {Object} measurement - From AudioMonitorV2
+   * @param {Float32Array} audioBuffer - Raw audio data for frequency analysis
    */
-  async processMeasurement(measurement) {
+  async processMeasurement(measurement, audioBuffer = null) {
     if (!measurement || typeof measurement.decibel !== 'number') {
       return null;
+    }
+
+    // 🔥 NEW: Advanced Frequency & Source Analysis
+    let advancedAnalysis = null;
+    if (audioBuffer && audioBuffer.length > 0) {
+      advancedAnalysis = performCompleteAudioAnalysis(audioBuffer, 44100);
+      
+      // Skip event if detected as OWN_APARTMENT noise
+      if (advancedAnalysis.sourceDetection.source === 'OWN_APARTMENT') {
+        console.log(`[EventDetector] ⚠️ Event discarded: ${advancedAnalysis.sourceDetection.reason}`);
+        return null;
+      }
     }
 
     // Add to history for pattern analysis
@@ -74,14 +96,18 @@ class EventDetectorV2 {
       this._calibrateBaseline(measurement);
     }
     
-    // Analyze for events
-    const eventData = await this._analyzeForEvent(measurement);
+    // Analyze for events with enhanced data
+    const eventData = await this._analyzeForEvent(measurement, advancedAnalysis);
     
     if (eventData) {
       // Store event in database
       await this._storeEvent(eventData);
       
-      console.log(`[EventDetector] Event detected: ${eventData.classification} (${eventData.decibel}dB)`);
+      const sourceInfo = advancedAnalysis?.sourceDetection 
+        ? ` [${advancedAnalysis.sourceDetection.source} ${Math.round(advancedAnalysis.sourceDetection.confidence*100)}%]`
+        : '';
+      
+      console.log(`[EventDetector] Event detected: ${eventData.classification} (${eventData.decibel}dB)${sourceInfo}`);
       return eventData;
     }
     
@@ -90,8 +116,10 @@ class EventDetectorV2 {
 
   /**
    * Intelligent event analysis using pattern recognition
+   * @param {Object} measurement - Basic measurement data
+   * @param {Object} advancedAnalysis - Frequency analysis from performCompleteAudioAnalysis
    */
-  async _analyzeForEvent(measurement) {
+  async _analyzeForEvent(measurement, advancedAnalysis = null) {
     const { decibel, timestamp, frequencyBands } = measurement;
     
     // Skip if below meaningful threshold
@@ -99,10 +127,13 @@ class EventDetectorV2 {
       return null;
     }
     
-    // Calculate event characteristics
-    const classification = this._classifyNoise(decibel, frequencyBands);
-    const confidence = this._calculateConfidence(measurement);
+    // 🔥 ENHANCED: Calculate event characteristics with advanced analysis
+    const classification = this._classifyNoise(decibel, frequencyBands, advancedAnalysis);
+    const confidence = this._calculateConfidence(measurement, advancedAnalysis);
     const pattern = this._analyzePattern(measurement);
+    
+    // 🔥 NEW: Motion-Audio Correlation Analysis
+    const motionCorrelation = MotionDetector.analyzeMotionCorrelation(timestamp);
     
     // Only proceed if confidence is high enough
     if (confidence < this.eventConfidenceThreshold) {
@@ -113,18 +144,21 @@ class EventDetectorV2 {
     const existingEvent = this._findActiveEvent(measurement);
     
     if (existingEvent) {
-      // Extend existing event
-      return this._extendEvent(existingEvent, measurement);
+      // Extend existing event with new analysis data
+      return this._extendEvent(existingEvent, measurement, advancedAnalysis, motionCorrelation);
     } else {
-      // Create new event
-      return this._createNewEvent(measurement, classification, confidence, pattern);
+      // Create new event with advanced analysis
+      return this._createNewEvent(measurement, classification, confidence, pattern, advancedAnalysis, motionCorrelation);
     }
   }
 
   /**
    * Classify noise based on decibel and frequency characteristics
+   * @param {number} decibel - dB level
+   * @param {Object} frequencyBands - Basic frequency data  
+   * @param {Object} advancedAnalysis - Advanced frequency analysis
    */
-  _classifyNoise(decibel, frequencyBands) {
+  _classifyNoise(decibel, frequencyBands, advancedAnalysis = null) {
     // Base classification by decibel level
     let baseClass = 'Unknown';
     
@@ -135,7 +169,26 @@ class EventDetectorV2 {
       }
     }
     
-    // Enhanced classification using frequency hints
+    // 🔥 ENHANCED: Advanced classification using frequency analysis
+    if (advancedAnalysis?.sourceDetection) {
+      const { source, confidence } = advancedAnalysis.sourceDetection;
+      const { bassRatio, highRatio } = advancedAnalysis.sourceDetection.analysis;
+      
+      if (source === 'NEIGHBOR' && confidence > 0.8) {
+        if (bassRatio > 0.7) {
+          return `${baseClass} - Neighbor Music (Bass-dominant)`;
+        } else if (bassRatio > 0.6) {
+          return `${baseClass} - Neighbor Activity (Through wall)`;
+        }
+      }
+      
+      // dBA/dBC Analysis for enhanced classification
+      if (advancedAnalysis.dbAnalysis?.difference > 8) {
+        return `${baseClass} - Low-frequency dominant (${advancedAnalysis.dbAnalysis.difference} dB diff)`;
+      }
+    }
+    
+    // Enhanced classification using frequency hints (fallback)
     if (frequencyBands?.classification_hint) {
       switch (frequencyBands.classification_hint) {
         case 'broad_spectrum':
@@ -156,8 +209,10 @@ class EventDetectorV2 {
 
   /**
    * Calculate event confidence based on multiple factors
+   * @param {Object} measurement - Basic measurement
+   * @param {Object} advancedAnalysis - Advanced frequency analysis
    */
-  _calculateConfidence(measurement) {
+  _calculateConfidence(measurement, advancedAnalysis = null) {
     const { decibel, frequencyBands } = measurement;
     let confidence = 50; // Base confidence
     
@@ -174,7 +229,23 @@ class EventDetectorV2 {
       else if (variance > 15) confidence -= 10; // Noisy readings
     }
     
-    // Frequency band confidence
+    // 🔥 ENHANCED: Advanced analysis confidence boosts
+    if (advancedAnalysis?.sourceDetection) {
+      const { source, confidence: sourceConfidence } = advancedAnalysis.sourceDetection;
+      
+      if (source === 'NEIGHBOR' && sourceConfidence > 0.8) {
+        confidence += 20; // High confidence neighbor detection
+      } else if (source === 'UNCERTAIN') {
+        confidence += 5; // Some analysis available
+      }
+      
+      // dBC-dBA difference adds confidence
+      if (advancedAnalysis.dbAnalysis?.difference > 10) {
+        confidence += 15; // Strong bass signature
+      }
+    }
+    
+    // Frequency band confidence (fallback)
     if (frequencyBands?.classification_hint) {
       confidence += 10; // We have frequency information
     }
@@ -233,8 +304,14 @@ class EventDetectorV2 {
 
   /**
    * Create new event record
+   * @param {Object} measurement - Basic measurement
+   * @param {string} classification - Event classification
+   * @param {number} confidence - Confidence score
+   * @param {Object} pattern - Pattern analysis
+   * @param {Object} advancedAnalysis - Advanced frequency analysis
+   * @param {Object} motionCorrelation - Motion correlation analysis
    */
-  _createNewEvent(measurement, classification, confidence, pattern) {
+  _createNewEvent(measurement, classification, confidence, pattern, advancedAnalysis = null, motionCorrelation = null) {
     const eventId = this.eventIdCounter++;
     const event = {
       id: eventId,
@@ -245,8 +322,15 @@ class EventDetectorV2 {
       confidence: confidence,
       pattern: pattern,
       freq_bands: measurement.frequencyBands,
+      
+      // 🔥 NEW: Advanced analysis data
+      source_detection: advancedAnalysis?.sourceDetection || null,
+      octave_bands: advancedAnalysis?.octaveBands || null,
+      dba_dbc_analysis: advancedAnalysis?.dbAnalysis || null,
+      motion_correlation: motionCorrelation || null,
+      
       status: 'active',
-      legal_relevance: pattern.legal_relevance || 'medium',
+      legal_relevance: this._calculateLegalRelevance(pattern, advancedAnalysis, motionCorrelation),
       created_at: new Date().toISOString()
     };
     
@@ -258,8 +342,12 @@ class EventDetectorV2 {
 
   /**
    * Extend existing active event
+   * @param {Object} existingEvent - Existing event to extend
+   * @param {Object} measurement - New measurement
+   * @param {Object} advancedAnalysis - Advanced frequency analysis
+   * @param {Object} motionCorrelation - Motion correlation analysis
    */
-  _extendEvent(existingEvent, measurement) {
+  _extendEvent(existingEvent, measurement, advancedAnalysis = null, motionCorrelation = null) {
     const timeDiff = measurement.timestamp - existingEvent.timestamp;
     
     // Update event duration and peak decibel
@@ -268,10 +356,28 @@ class EventDetectorV2 {
       existingEvent.decibel = measurement.decibel;
     }
     
-    // Update confidence based on duration
+    // 🔥 NEW: Update advanced analysis data if available
+    if (advancedAnalysis?.sourceDetection) {
+      existingEvent.source_detection = advancedAnalysis.sourceDetection;
+      existingEvent.octave_bands = advancedAnalysis.octaveBands;
+      existingEvent.dba_dbc_analysis = advancedAnalysis.dbAnalysis;
+    }
+    
+    if (motionCorrelation) {
+      existingEvent.motion_correlation = motionCorrelation;
+    }
+    
+    // Update confidence based on duration and new analysis
     if (existingEvent.duration > 30000) { // 30 seconds
       existingEvent.confidence = Math.min(100, existingEvent.confidence + 5);
     }
+    
+    // Re-evaluate legal relevance with new data
+    existingEvent.legal_relevance = this._calculateLegalRelevance(
+      existingEvent.pattern, 
+      advancedAnalysis, 
+      motionCorrelation
+    );
     
     return existingEvent;
   }
@@ -294,20 +400,73 @@ class EventDetectorV2 {
   }
 
   /**
-   * Store event in database
+   * Store event in database with enhanced data
    */
   async _storeEvent(eventData) {
     try {
-      await this.dbService.saveNoiseEvent({
+      const dbEvent = {
         timestamp: new Date(eventData.timestamp).toISOString(),
         decibel: eventData.decibel,
         duration: Math.round(eventData.duration / 1000), // Convert to seconds
         freq_bands: eventData.freq_bands,
-        classification: eventData.classification
-      });
+        classification: eventData.classification,
+        
+        // 🔥 NEW: Store advanced analysis data as JSON
+        source_detection: JSON.stringify(eventData.source_detection || {}),
+        octave_bands: JSON.stringify(eventData.octave_bands || {}),
+        dba_dbc_data: JSON.stringify(eventData.dba_dbc_analysis || {}),
+        motion_data: JSON.stringify(eventData.motion_correlation || {}),
+        
+        confidence_score: eventData.confidence,
+        legal_relevance: eventData.legal_relevance
+      };
+      
+      await this.dbService.saveNoiseEvent(dbEvent);
     } catch (error) {
       console.error('[EventDetector] Failed to store event:', error);
     }
+  }
+
+  /**
+   * Calculate legal relevance based on multiple factors
+   */
+  _calculateLegalRelevance(pattern, advancedAnalysis, motionCorrelation) {
+    let score = 0;
+    
+    // Base pattern score
+    switch (pattern?.type) {
+      case 'sustained': score += 30; break;
+      case 'escalating': score += 25; break;
+      case 'intermittent': score += 15; break;
+      case 'brief': score += 5; break;
+    }
+    
+    // Source detection score
+    if (advancedAnalysis?.sourceDetection?.source === 'NEIGHBOR') {
+      score += 20;
+      if (advancedAnalysis.sourceDetection.confidence > 0.8) {
+        score += 10;
+      }
+    }
+    
+    // Motion correlation score
+    if (motionCorrelation?.correlation === 'FOOTSTEPS_ABOVE') {
+      score += 15;
+    } else if (motionCorrelation?.correlation === 'FURNITURE_MOVING') {
+      score += 10;
+    }
+    
+    // dBC-dBA difference (bass dominance)
+    if (advancedAnalysis?.dbAnalysis?.difference > 10) {
+      score += 15; // Strong bass = likely neighbor
+    }
+    
+    // Convert score to relevance level
+    if (score >= 50) return 'very_high';
+    if (score >= 35) return 'high';
+    if (score >= 20) return 'medium';
+    if (score >= 10) return 'low';
+    return 'minimal';
   }
 
   /**
@@ -422,6 +581,22 @@ class EventDetectorV2 {
         this.activeEvents.delete(eventId);
       }
     }
+    
+    // Cleanup motion detector as well
+    MotionDetector.cleanup?.();
+  }
+
+  /**
+   * Stop all monitoring and cleanup
+   */
+  async stop() {
+    // Stop motion monitoring
+    MotionDetector.stopMonitoring();
+    
+    // Final cleanup
+    this.cleanup();
+    
+    console.log('[EventDetector] Stopped with advanced noise source detection');
   }
 }
 

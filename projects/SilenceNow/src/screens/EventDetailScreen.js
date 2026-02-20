@@ -33,20 +33,36 @@ export default function EventDetailScreen({ route, navigation }) {
   const [noteText, setNoteText] = useState('');
   const [noteType, setNoteType] = useState('general');
 
-  // Robust date parsing: handles ISO strings, unix timestamps (ms), and numeric strings
+  // Robust date parsing: handles ISO strings, unix timestamps (ms/s), numeric strings, and edge cases
   const parseTimestamp = (ts) => {
     if (!ts) return new Date();
-    if (ts instanceof Date) return ts;
-    // If it's a number or numeric string (unix ms timestamp)
-    const num = typeof ts === 'string' ? Number(ts) : ts;
-    if (typeof num === 'number' && !isNaN(num) && num > 1000000000000) {
-      return new Date(num); // milliseconds
+    if (ts instanceof Date && !isNaN(ts.getTime())) return ts;
+    
+    // If it's a number or numeric string (unix timestamp)
+    const num = typeof ts === 'number' ? ts : Number(ts);
+    if (!isNaN(num) && num > 0) {
+      if (num > 1000000000000) {
+        return new Date(num); // milliseconds
+      }
+      if (num > 1000000000) {
+        return new Date(num * 1000); // seconds
+      }
     }
-    if (typeof num === 'number' && !isNaN(num) && num > 1000000000) {
-      return new Date(num * 1000); // seconds
+    
+    // Try ISO string parsing
+    if (typeof ts === 'string') {
+      // Fix common issues: ensure ISO format
+      const parsed = new Date(ts);
+      if (!isNaN(parsed.getTime())) return parsed;
+      
+      // Try adding T separator if missing
+      const withT = ts.replace(' ', 'T');
+      const parsed2 = new Date(withT);
+      if (!isNaN(parsed2.getTime())) return parsed2;
     }
-    const parsed = new Date(ts);
-    return isNaN(parsed.getTime()) ? new Date() : parsed;
+    
+    console.warn('[EventDetail] Could not parse timestamp:', ts, typeof ts);
+    return new Date(); // Fallback to now
   };
 
   const date = parseTimestamp(event.timestamp);

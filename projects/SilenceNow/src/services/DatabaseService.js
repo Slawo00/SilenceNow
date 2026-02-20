@@ -190,8 +190,9 @@ class DatabaseService {
         (timestamp, decibel, duration, freq_bass, freq_low_mid, freq_mid, freq_high_mid, freq_high,
          classification, detailed_type, likely_source, legal_relevance, legal_score,
          is_nighttime_violation, time_context, health_impact, duration_impact,
-         ai_type, ai_confidence, ai_emoji, ai_description, ai_legal_category, ai_severity) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         ai_type, ai_confidence, ai_emoji, ai_description, ai_legal_category, ai_severity,
+         source_detection, octave_bands, dba_dbc_data, motion_data, confidence_score) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event.timestamp,
           event.decibel,
@@ -215,7 +216,13 @@ class DatabaseService {
           event.aiEmoji || null,
           event.aiDescription || null,
           event.aiLegalCategory || null,
-          event.aiSeverity || null
+          event.aiSeverity || null,
+          // 🔥 NEW: Advanced analysis data
+          event.source_detection || null,
+          event.octave_bands || null,
+          event.dba_dbc_data || null,
+          event.motion_data || null,
+          event.confidence_score || 50
         ]
       );
 

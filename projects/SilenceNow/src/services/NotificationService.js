@@ -137,7 +137,7 @@ class NotificationService {
         actionUrl: 'silencenow://evidence-detail'
       },
       priority,
-      sound: legalScore > 70 ? 'default' : null
+      sound: legalScore > 70 ? 'default' : false
     });
   }
 
@@ -340,7 +340,7 @@ class NotificationService {
         title,
         body,
         data,
-        sound: sound === false ? false : (typeof sound === 'string' ? sound : true),
+        sound: sound === false ? false : (typeof sound === 'string' ? sound : 'default'),
         priority,
         color: JUSTICE_GREEN
       };

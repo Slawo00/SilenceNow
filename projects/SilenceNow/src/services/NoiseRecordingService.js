@@ -14,7 +14,7 @@
  */
 
 import AudioMonitorV2 from './AudioMonitorV2';
-import EventDetector from './EventDetector';
+import EventDetectorV2 from './EventDetectorV2';
 import DatabaseService from './DatabaseService';
 import { DEFAULTS } from '../utils/constants';
 
@@ -57,9 +57,15 @@ class NoiseRecordingService {
     try {
       console.log('[NoiseRecording] Starting enhanced recording session');
       
+      // Initialize EventDetectorV2 first
+      const detectorReady = await this.eventDetector.initialize();
+      if (!detectorReady) {
+        throw new Error('Failed to initialize EventDetectorV2');
+      }
+
       // Start AudioMonitor with enhanced callbacks
       const success = await AudioMonitorV2.startMonitoring(
-        (measurement) => this._processMeasurement(measurement),
+        (measurement, audioBuffer) => this._processMeasurement(measurement, audioBuffer),
         (event) => this._handleEvent(event),
         (error) => this._handleError(error)
       );
@@ -97,8 +103,8 @@ class NoiseRecordingService {
     console.log('[NoiseRecording] Stopping recording session');
     
     try {
-      // Force end any active event
-      await EventDetector.forceEndEvent();
+      // Stop EventDetectorV2 and cleanup
+      await this.eventDetector.stop();
       
       // Stop AudioMonitor
       await AudioMonitorV2.stopMonitoring();
@@ -109,7 +115,7 @@ class NoiseRecordingService {
       this.isRecording = false;
       this.startTime = null;
       
-      console.log('[NoiseRecording] Session completed:', sessionSummary);
+      console.log('[NoiseRecording] 🛑 Advanced session completed:', sessionSummary);
       this._notifyStatusUpdate('recording_stopped', sessionSummary);
       
       return sessionSummary;
@@ -121,9 +127,11 @@ class NoiseRecordingService {
   }
 
   /**
-   * Enhanced measurement processing with pattern recognition
+   * Enhanced measurement processing with pattern recognition & frequency analysis
+   * @param {Object} measurement - From AudioMonitorV2
+   * @param {Float32Array} audioBuffer - Raw audio data for advanced analysis
    */
-  _processMeasurement(measurement) {
+  async _processMeasurement(measurement, audioBuffer = null) {
     this.totalMeasurements++;
     
     // Update session statistics
@@ -132,15 +140,32 @@ class NoiseRecordingService {
     // Enhanced event detection with pattern analysis
     this._analyzeNoisePattern(measurement);
     
-    // Process through EventDetector
-    EventDetector.processMeasurement(measurement);
+    // 🔥 NEW: Process through EventDetectorV2 with advanced analysis
+    const eventData = await this.eventDetector.processMeasurement(measurement, audioBuffer);
     
-    // Notify status update
-    this._notifyStatusUpdate('measurement', {
+    if (eventData) {
+      this.eventCount++;
+      console.log(`[NoiseRecording] 🎯 Advanced event detected:`, {
+        classification: eventData.classification,
+        confidence: eventData.confidence,
+        source: eventData.source_detection?.source,
+        sourceConfidence: Math.round((eventData.source_detection?.confidence || 0) * 100),
+        motionCorrelation: eventData.motion_correlation?.correlation
+      });
+      
+      // Notify event detected with enhanced data
+      this._notifyEventDetected(eventData);
+    }
+    
+    // Notify status update with advanced analysis hints
+    const statusData = {
       decibel: measurement.decibel,
-      isEvent: measurement.isEvent,
-      classification: measurement.classification
-    });
+      isEvent: !!eventData,
+      classification: eventData?.classification || measurement.classification,
+      sourceHint: eventData?.source_detection?.source || 'unknown'
+    };
+    
+    this._notifyStatusUpdate('measurement', statusData);
   }
 
   /**
