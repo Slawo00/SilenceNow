@@ -30,6 +30,8 @@ export default function HomeScreen({ navigation }) {
     daysMonitored: 0,
   });
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState('relevant'); // 'relevant' | 'all'
+  const [allEvents, setAllEvents] = useState([]);
   const appState = useRef(AppState.currentState);
 
   // Reload events when screen comes back into focus (e.g. after editing)
@@ -63,13 +65,17 @@ export default function HomeScreen({ navigation }) {
     };
   }, []);
 
+  const isRelevantEvent = (event) => {
+    return (event.decibel || 0) >= 55 && event.source_confirmed !== 'not_neighbor';
+  };
+
   const loadData = async () => {
     try {
-      const allEvents = await DatabaseService.getAllEvents();
-      setEvents(allEvents.slice(0, 20));
+      const fetchedEvents = await DatabaseService.getAllEvents();
+      setAllEvents(fetchedEvents.slice(0, 50));
+      setEvents(fetchedEvents.slice(0, 50));
 
-      // Nur rechtlich relevante Events zählen:
-      // über Schwellenwert + nicht als "Kein Nachbar" markiert
+      // Nur rechtlich relevante Events zählen
       const relevant = await DatabaseService.getRelevantStats(14);
 
       setStats({
@@ -215,25 +221,56 @@ export default function HomeScreen({ navigation }) {
 
       <View style={styles.eventsSection}>
         <Text style={styles.sectionTitle}>Letzte Ereignisse</Text>
-        {events.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🔇</Text>
-            <Text style={styles.emptyText}>Noch keine Ereignisse</Text>
-            <Text style={styles.emptySubtext}>
-              {isMonitoring
-                ? 'Überwachung aktiv. Ereignisse erscheinen hier automatisch.'
-                : 'Starte die Überwachung um Lärmereignisse zu erkennen.'}
+
+        {/* Filter Buttons */}
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[styles.filterButton, filter === 'relevant' && styles.filterButtonActive]}
+            onPress={() => setFilter('relevant')}
+          >
+            <Text style={[styles.filterButtonText, filter === 'relevant' && styles.filterButtonTextActive]}>
+              ⚖️ Relevant ({allEvents.filter(isRelevantEvent).length})
             </Text>
-          </View>
-        ) : (
-          events.map((event, index) => (
-            <EventCard
-              key={event.id || index}
-              event={event}
-              onPress={() => navigation.navigate('EventDetail', { event })}
-            />
-          ))
-        )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
+            onPress={() => setFilter('all')}
+          >
+            <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
+              📋 Alle ({allEvents.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {(() => {
+          const filteredEvents = filter === 'relevant'
+            ? allEvents.filter(isRelevantEvent)
+            : allEvents;
+
+          return filteredEvents.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>{filter === 'relevant' ? '✅' : '🔇'}</Text>
+              <Text style={styles.emptyText}>
+                {filter === 'relevant' ? 'Keine relevanten Ereignisse' : 'Noch keine Ereignisse'}
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {filter === 'relevant'
+                  ? 'Keine Lärmereignisse über der Schwelle von 55 dB.'
+                  : isMonitoring
+                    ? 'Überwachung aktiv. Ereignisse erscheinen hier automatisch.'
+                    : 'Starte die Überwachung um Lärmereignisse zu erkennen.'}
+              </Text>
+            </View>
+          ) : (
+            filteredEvents.slice(0, 20).map((event, index) => (
+              <EventCard
+                key={event.id || index}
+                event={event}
+                onPress={() => navigation.navigate('EventDetail', { event })}
+              />
+            ))
+          );
+        })()}
       </View>
 
     </ScrollView>
@@ -360,6 +397,29 @@ const styles = StyleSheet.create({
   eventsSection: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#243447',
+    alignItems: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: COLORS.ELECTRIC_GREEN,
+  },
+  filterButtonText: {
+    color: COLORS.WARM_GREY,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  filterButtonTextActive: {
+    color: COLORS.MIDNIGHT_BLUE,
   },
   sectionTitle: {
     fontSize: 18,
