@@ -68,12 +68,13 @@ export default function HomeScreen({ navigation }) {
       const allEvents = await DatabaseService.getAllEvents();
       setEvents(allEvents.slice(0, 20));
 
-      const count = await DatabaseService.getEventsCount(14);
-      const avg = await DatabaseService.getAverageDecibel(14);
+      // Nur rechtlich relevante Events zählen:
+      // über Schwellenwert + nicht als "Kein Nachbar" markiert
+      const relevant = await DatabaseService.getRelevantStats(14);
 
       setStats({
-        totalEvents: count,
-        avgDecibel: Math.round(avg),
+        totalEvents: relevant.count,
+        avgDecibel: relevant.avgDecibel,
         daysMonitored: 14,
       });
     } catch (error) {

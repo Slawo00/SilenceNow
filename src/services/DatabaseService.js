@@ -423,6 +423,71 @@ class DatabaseService {
     }
   }
 
+  /**
+   * Zählt nur rechtlich relevante Events für die Zusammenfassung:
+   * - Dezibel über Schwellenwert (55 dB)
+   * - Nachbar bestätigt ODER Score > 60 ODER unbestätigt (Score >= 30)
+   * - NICHT: source_confirmed = 'not_neighbor'
+   */
+  async getRelevantStats(days = 14) {
+    await this._ensureReady();
+    const cutoff = this._getCutoffDate(days);
+    const threshold = 55; // DEFAULTS.THRESHOLD_DB
+
+    if (this.useLocalDB) {
+      try {
+        const countResult = await this.db.getFirstAsync(
+          `SELECT COUNT(*) as count FROM noise_events 
+           WHERE timestamp > ? AND decibel >= ? 
+           AND (source_confirmed != 'not_neighbor' OR source_confirmed IS NULL)`,
+          [cutoff, threshold]
+        );
+        const avgResult = await this.db.getFirstAsync(
+          `SELECT AVG(decibel) as avg FROM noise_events 
+           WHERE timestamp > ? AND decibel >= ? 
+           AND (source_confirmed != 'not_neighbor' OR source_confirmed IS NULL)`,
+          [cutoff, threshold]
+        );
+        return {
+          count: countResult?.count || 0,
+          avgDecibel: Math.round(avgResult?.avg || 0),
+        };
+      } catch (error) {
+        console.error('[DB] SQLite relevant stats error:', error);
+        return { count: 0, avgDecibel: 0 };
+      }
+    } else {
+      // Web/memory fallback
+      let events = [];
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('noise_events')
+            .select('decibel, source_confirmed, neighbor_score')
+            .gte('timestamp', cutoff)
+            .gte('decibel', threshold);
+          if (!error && data) events = data;
+        } catch (error) {
+          console.error('[DB] Supabase relevant stats error:', error);
+        }
+      }
+      if (events.length === 0) {
+        events = this.memoryCache.filter(e => 
+          e.timestamp > cutoff && (e.decibel || 0) >= threshold
+        );
+      }
+
+      // Filter: nicht "not_neighbor"
+      const relevant = events.filter(e => e.source_confirmed !== 'not_neighbor');
+      const count = relevant.length;
+      const avgDecibel = count > 0
+        ? Math.round(relevant.reduce((sum, e) => sum + (e.decibel || 0), 0) / count)
+        : 0;
+
+      return { count, avgDecibel };
+    }
+  }
+
   async getEventsByTimeRange(startDate, endDate) {
     await this._ensureReady();
     
