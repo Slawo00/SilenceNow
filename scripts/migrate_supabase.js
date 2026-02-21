@@ -6,9 +6,10 @@
  */
 const { Pool } = require('pg');
 
-// Always use Supabase directly - ignore Replit's DATABASE_URL (heliumdb)
+// Use Supabase pooler (transaction mode) - works from Replit/serverless (IPv4)
+// Format: postgres://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
 const DB_URL = process.env.SUPABASE_DB_URL || 
-  'postgresql://postgres:Ilm!2022!e6g8%23O%23g2@db.aawfwtwufqenrdzqfmgw.supabase.co:5432/postgres';
+  'postgresql://postgres.aawfwtwufqenrdzqfmgw:Ilm!2022!e6g8%23O%23g2@aws-0-eu-central-1.pooler.supabase.com:6543/postgres';
 
 async function migrate() {
   console.log('🔄 Connecting to Supabase...');
