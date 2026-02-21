@@ -255,22 +255,38 @@ class EventDetector {
       this.eventStartTime, durationMs / 2
     );
 
-    // ---- NACHBAR-SCORING ----
-    const decibelVariance = this._calculateVariance(this.activeEvent.measurements);
+    // ---- NACHBAR-SCORING V2 ----
     const hour = new Date(this.activeEvent.startTime).getHours();
     const isNighttime = hour >= 22 || hour < 6;
 
+    // dB-Varianz (Standardabweichung) berechnen
+    const dbValues = this.activeEvent.measurements
+      .filter(m => m.decibel >= 55)
+      .map(m => m.decibel);
+    const dbMean = dbValues.length > 0 ? dbValues.reduce((a, b) => a + b, 0) / dbValues.length : 0;
+    const dbVariance = dbValues.length > 1
+      ? Math.sqrt(dbValues.reduce((sum, v) => sum + Math.pow(v - dbMean, 2), 0) / dbValues.length)
+      : 0;
+
+    // Bass-Ratio berechnen: (bass+lowMid) / (mid+highMid+high)
+    const totalHighEnergy = (avgFreqBands.mid || 0) + (avgFreqBands.highMid || 0) + (avgFreqBands.high || 0);
+    const totalLowEnergy = (avgFreqBands.bass || 0) + (avgFreqBands.lowMid || 0);
+    const bassRatio = totalHighEnergy > 0 ? totalLowEnergy / totalHighEnergy : 0;
+
+    // Mid-Ratio berechnen: (mid+highMid) / totalEnergy
+    const totalEnergy = totalLowEnergy + totalHighEnergy;
+    const midRatio = totalEnergy > 0
+      ? ((avgFreqBands.mid || 0) + (avgFreqBands.highMid || 0)) / totalEnergy
+      : 0;
+
     const neighborResult = NeighborScoring.calculateScore({
-      vibrationDetected: motionCorrelation.hasMotion && motionCorrelation.motionIntensity > 0.2,
-      phoneIsStill: !motionStats.isActive || motionStats.avgAcceleration < 0.05,
-      phoneIsMoving: motionStats.isActive && motionStats.avgAcceleration > 0.3,
+      avgAcceleration: motionStats.avgAcceleration || 0,
+      bassRatio,
+      midRatio,
+      dbVariance,
       isNighttime,
       durationMs,
-      decibelVariance,
       avgDecibel,
-      // Rohdaten für transparentes Logging
-      motionIntensity: motionCorrelation.motionIntensity || 0,
-      avgAcceleration: motionStats.avgAcceleration || 0,
     });
 
     // Score < 30: Nicht loggen
@@ -318,6 +334,8 @@ class EventDetector {
       // Nachbar-Erkennung
       neighbor_score: neighborResult.score,
       source_confirmed: neighborResult.label === 'neighbor' ? 'neighbor' : 'unconfirmed',
+      // Audit-Trail: Scoring-Details als JSON
+      scoring_factors: JSON.stringify(neighborResult.factors),
     };
 
     await DatabaseService.insertEvent(event);

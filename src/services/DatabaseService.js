@@ -99,6 +99,7 @@ class DatabaseService {
         'ALTER TABLE noise_events ADD COLUMN category_auto INTEGER DEFAULT 1',
         'ALTER TABLE noise_events ADD COLUMN avg_decibel REAL DEFAULT 0',
         'ALTER TABLE noise_events ADD COLUMN peak_decibel REAL DEFAULT 0',
+        'ALTER TABLE noise_events ADD COLUMN scoring_factors TEXT',
       ];
 
       for (const migration of migrations) {
@@ -216,8 +217,8 @@ class DatabaseService {
          is_nighttime_violation, time_context, health_impact, duration_impact,
          ai_type, ai_confidence, ai_emoji, ai_description, ai_legal_category, ai_severity,
          start_time, end_time, neighbor_score, source_confirmed, noise_category, category_auto,
-         avg_decibel, peak_decibel) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         avg_decibel, peak_decibel, scoring_factors) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event.timestamp,
           event.decibel,
@@ -251,6 +252,7 @@ class DatabaseService {
           event.category_auto ? 1 : 0,
           event.avg_decibel || event.decibel || 0,
           event.peak_decibel || event.decibel || 0,
+          event.scoring_factors || null,
         ]
       );
 
@@ -295,14 +297,29 @@ class DatabaseService {
             freq_high_mid: event.freqBands?.highMid || 0,
             freq_high: event.freqBands?.high || 0,
             classification: event.classification || 'Loud',
-            detailed_type: event.detailedType,
-            likely_source: event.likelySource,
+            detailed_type: event.detailedType || event.aiType || null,
+            likely_source: event.likelySource || null,
             legal_relevance: event.legalRelevance || 'low',
             legal_score: event.legalScore || 0,
             is_nighttime_violation: event.isNighttimeViolation || false,
-            time_context: event.timeContext,
+            time_context: event.timeContext || null,
             health_impact: event.healthImpact || 'low',
-            duration_impact: event.durationImpact || 'brief'
+            duration_impact: event.durationImpact || 'brief',
+            ai_type: event.aiType || null,
+            ai_confidence: event.aiConfidence || 0,
+            ai_emoji: event.aiEmoji || null,
+            ai_description: event.aiDescription || null,
+            ai_legal_category: event.aiLegalCategory || null,
+            ai_severity: event.aiSeverity || null,
+            start_time: event.start_time || event.timestamp,
+            end_time: event.end_time || null,
+            neighbor_score: event.neighbor_score || 0,
+            source_confirmed: event.source_confirmed || 'unconfirmed',
+            noise_category: event.noise_category || null,
+            category_auto: event.category_auto ? true : false,
+            avg_decibel: event.avg_decibel || event.decibel || 0,
+            peak_decibel: event.peak_decibel || event.decibel || 0,
+            scoring_factors: event.scoring_factors || null,
           })
           .select()
           .single();

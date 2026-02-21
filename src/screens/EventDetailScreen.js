@@ -421,6 +421,31 @@ export default function EventDetailScreen({ route, navigation }) {
           <DataRow label="Nachbar-Score" value={`${neighborScore}/100`} highlight={neighborScore > 60} />
           <DataRow label="Status" value={getSourceLabel(event.source_confirmed || sourceConfirmed)} />
 
+          {/* Scoring-Details Audit-Trail */}
+          {(() => {
+            try {
+              const factors = event.scoring_factors
+                ? (typeof event.scoring_factors === 'string' ? JSON.parse(event.scoring_factors) : event.scoring_factors)
+                : null;
+              if (!factors || factors.length === 0) return null;
+              return (
+                <View style={styles.scoringDetails}>
+                  <Text style={styles.scoringTitle}>Scoring-Details:</Text>
+                  {factors.map((f, i) => (
+                    <View key={i} style={styles.scoringRow}>
+                      <Text style={styles.scoringStatus}>{f.fulfilled ? '✅' : '❌'}</Text>
+                      <Text style={styles.scoringLabel}>{f.label}</Text>
+                      <Text style={styles.scoringValue}>{f.actualValue} {f.unit || ''}</Text>
+                      <Text style={[styles.scoringPoints, { color: f.points > 0 ? '#00E676' : f.points < 0 ? '#F44336' : '#9E9E9E' }]}>
+                        {f.points > 0 ? '+' : ''}{f.points}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              );
+            } catch (e) { return null; }
+          })()}
+
           <View style={styles.neighborActions}>
             <TouchableOpacity
               style={[
@@ -727,6 +752,19 @@ const styles = StyleSheet.create({
 
   // Nachbar Actions
   neighborActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  scoringDetails: {
+    backgroundColor: '#1A2332', borderRadius: 8, padding: 12, marginTop: 12,
+  },
+  scoringTitle: {
+    color: COLORS.WARM_GREY, fontSize: 13, fontWeight: '600', marginBottom: 8,
+  },
+  scoringRow: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 3,
+  },
+  scoringStatus: { width: 24, fontSize: 12 },
+  scoringLabel: { flex: 1, color: COLORS.SOFT_WHITE, fontSize: 12 },
+  scoringValue: { color: COLORS.WARM_GREY, fontSize: 11, marginRight: 8, width: 80, textAlign: 'right' },
+  scoringPoints: { fontSize: 13, fontWeight: 'bold', width: 35, textAlign: 'right' },
   neighborBtn: {
     flex: 1, backgroundColor: 'rgba(0, 230, 118, 0.15)', borderRadius: 8,
     paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: COLORS.ELECTRIC_GREEN,
