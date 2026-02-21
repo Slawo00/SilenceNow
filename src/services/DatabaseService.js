@@ -1190,7 +1190,17 @@ class DatabaseService {
           is_nighttime_violation: Boolean(event.is_nighttime_violation || event.isNighttimeViolation),
           time_context: event.time_context || event.timeContext,
           health_impact: event.health_impact || event.healthImpact || 'low',
-          duration_impact: event.duration_impact || event.durationImpact || 'brief'
+          duration_impact: event.duration_impact || event.durationImpact || 'brief',
+          // V2 Scoring fields
+          start_time: event.start_time || event.timestamp,
+          end_time: event.end_time || null,
+          neighbor_score: event.neighbor_score || 0,
+          source_confirmed: event.source_confirmed || 'unconfirmed',
+          noise_category: event.noise_category || null,
+          category_auto: event.category_auto !== undefined ? Boolean(event.category_auto) : true,
+          avg_decibel: event.avg_decibel || event.decibel || 0,
+          peak_decibel: event.peak_decibel || event.decibel || 0,
+          scoring_factors: event.scoring_factors || null,
         })));
 
       if (error) throw error;
