@@ -6,10 +6,9 @@
  */
 const { Pool } = require('pg');
 
-// Use Supabase pooler (transaction mode) - works from Replit/serverless (IPv4)
-// Format: postgres://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
+// Use Supabase session pooler (IPv4 compatible, works from Replit)
 const DB_URL = process.env.SUPABASE_DB_URL || 
-  'postgresql://postgres.aawfwtwufqenrdzqfmgw:Ilm!2022!e6g8%23O%23g2@aws-0-eu-central-1.pooler.supabase.com:6543/postgres';
+  'postgresql://postgres.aawfwtwufqenrdzqfmgw:Ilm!2022!e6g8%23O%23g2@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
 
 async function migrate() {
   console.log('🔄 Connecting to Supabase...');
