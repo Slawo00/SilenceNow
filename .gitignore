@@ -67,3 +67,53 @@ temp/
 
 # Example folder
 app-example
+
+# Clawdbot / AI workspace files (DO NOT COMMIT)
+AGENTS.md
+SOUL.md
+USER.md
+IDENTITY.md
+BOOTSTRAP.md
+HEARTBEAT.md
+TOOLS.md
+TASKS.md
+MEMORY.md
+memory/
+canvas/
+projects/
+ClaudeTester/
+OpenClaw-Opus4.6/
+openclaw_tests/
+attached_assets/
+supabase/
+replit.md
+
+# AI debug/test scripts (DO NOT COMMIT)
+ARENA_*.md
+ARENA_*.js
+OPUS_*.md
+OPUS_*.js
+CONSISTENT_*.md
+FINAL_*.js
+FINAL_*.md
+COMPLETE_*.js
+NEVER_FORGET_*.md
+OPENCLAW_*.md
+ROBUST_*.md
+SLAWO_*.md
+EXPO_TESTING.md
+DIRECT_OPUS_*.js
+ReactNativeNavigator.js
+SIMPLE_NAVIGATION_TEST.js
+ULTIMATE_BUTTON_SOLUTION.js
+arena_*.js
+browser_control.js
+click_*.js
+handle_*.js
+opus*.js
+react_native_*.js
+real_screenshot_tool.js
+screenshot_tool.js
+simulate_click.js
+test_*.js
+scripts/start-tunnel.sh
