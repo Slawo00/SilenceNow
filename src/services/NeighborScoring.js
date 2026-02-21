@@ -44,8 +44,8 @@ class NeighborScoring {
     const minute = new Date().getMinutes();
 
     // ── #1: Vibration erkannt (+25) ──
-    // Strukturschall durch Bohren/Hämmern: Accelerometer zwischen 0.015 und 0.05
-    const vibrationDetected = avgAcceleration >= 0.015 && avgAcceleration < 0.05;
+    // Strukturschall durch Bohren/Hämmern: Accelerometer zwischen 0.03 und 0.07
+    const vibrationDetected = avgAcceleration >= 0.03 && avgAcceleration < 0.07;
     factors.push({
       id: 1,
       rule: 'vibration_detected',
@@ -53,7 +53,7 @@ class NeighborScoring {
       maxPoints: 25,
       points: vibrationDetected ? 25 : 0,
       fulfilled: vibrationDetected,
-      condition: '0.015 ≤ avgAcc < 0.05',
+      condition: '0.03 ≤ avgAcc < 0.07',
       actualValue: avgAcceleration.toFixed(4),
       unit: 'm/s²',
     });
@@ -91,7 +91,7 @@ class NeighborScoring {
     if (extremeBass) score += 10;
 
     // ── #4: Handy liegt still (+25) ──
-    const phoneStill = avgAcceleration < 0.015;
+    const phoneStill = avgAcceleration < 0.03;
     factors.push({
       id: 4,
       rule: 'phone_still',
@@ -99,7 +99,7 @@ class NeighborScoring {
       maxPoints: 25,
       points: phoneStill ? 25 : 0,
       fulfilled: phoneStill,
-      condition: 'avgAcc < 0.015',
+      condition: 'avgAcc < 0.03',
       actualValue: avgAcceleration.toFixed(4),
       unit: 'm/s²',
     });
