@@ -117,3 +117,25 @@ screenshot_tool.js
 simulate_click.js
 test_*.js
 scripts/start-tunnel.sh
+
+# Screenshots & debug images
+*.png.report
+after_*.png
+before_*.png
+complete_*.png
+step*.png
+ultimate_*.png
+verification_*.png
+nav_test_*.png
+arena_*.png
+opus_*.png
+silencenow_screenshot_*.png
+
+# Shell scripts (non-app)
+OPENCLAW_*.sh
+ULTIMATE_*.sh
+get-docker.sh
+
+# Other non-app files
+arena_review.txt
+mobile_preview.html
