@@ -268,6 +268,9 @@ class EventDetector {
       durationMs,
       decibelVariance,
       avgDecibel,
+      // Rohdaten für transparentes Logging
+      motionIntensity: motionCorrelation.motionIntensity || 0,
+      avgAcceleration: motionStats.avgAcceleration || 0,
     });
 
     // Score < 30: Nicht loggen
