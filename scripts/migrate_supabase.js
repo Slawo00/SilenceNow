@@ -6,7 +6,8 @@
  */
 const { Pool } = require('pg');
 
-const DB_URL = process.env.DATABASE_URL || 
+// Always use Supabase directly - ignore Replit's DATABASE_URL (heliumdb)
+const DB_URL = process.env.SUPABASE_DB_URL || 
   'postgresql://postgres:Ilm!2022!e6g8%23O%23g2@db.aawfwtwufqenrdzqfmgw.supabase.co:5432/postgres';
 
 async function migrate() {
@@ -54,7 +55,7 @@ async function migrate() {
         await client.query(`
           CREATE TABLE IF NOT EXISTS public.noise_events (
             id BIGSERIAL PRIMARY KEY,
-            user_id UUID REFERENCES auth.users(id),
+            user_id UUID,
             timestamp TEXT,
             decibel REAL,
             duration INTEGER,
