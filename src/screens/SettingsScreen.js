@@ -112,6 +112,11 @@ export default function SettingsScreen({ navigation }) {
         <SettingRow label="Privacy Policy" value="" onPress={() => Alert.alert('Coming Soon')} />
         <SettingRow label="Terms of Service" value="" onPress={() => Alert.alert('Coming Soon')} />
         <SettingRow label="Contact Support" value="support@silencenow.app" />
+        <SettingRow 
+          label="🔧 Debug Panel" 
+          value="›" 
+          onPress={() => navigation.navigate('Debug')} 
+        />
       </View>
 
       <View style={styles.footer}>

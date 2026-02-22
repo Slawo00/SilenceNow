@@ -28,13 +28,29 @@ if (Platform.OS !== 'web') {
   SQLite = require('expo-sqlite');
 }
 
-// Supabase Client initialisieren
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
+// Supabase Client (lazy init)
 let supabase = null;
-if (supabaseUrl && supabaseKey && createClient) {
-  supabase = createClient(supabaseUrl, supabaseKey);
+
+function getSupabaseClient() {
+  if (supabase) return supabase;
+  
+  // Lazy initialization - Environment Variables sind in Expo erst zur Laufzeit verfügbar
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  
+  console.log('[DB] Initializing Supabase client...');
+  console.log('[DB] URL available:', !!supabaseUrl);
+  console.log('[DB] Key available:', !!supabaseKey);
+  console.log('[DB] createClient available:', !!createClient);
+  
+  if (supabaseUrl && supabaseKey && createClient) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('[DB] ✅ Supabase client initialized');
+  } else {
+    console.log('[DB] ❌ Supabase client initialization failed');
+  }
+  
+  return supabase;
 }
 
 class DatabaseService {
@@ -283,9 +299,10 @@ class DatabaseService {
     this.memoryCache.push(eventWithId);
     
     // Direct Supabase insert for web
-    if (supabase) {
+    const client = getSupabaseClient();
+    if (client) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('noise_events')
           .insert({
             timestamp: event.timestamp,
@@ -1151,8 +1168,18 @@ class DatabaseService {
   // ============================================================
 
   async syncToSupabase() {
-    if (!supabase || this.isSyncing) return;
+    const client = getSupabaseClient();
+    if (!client) {
+      console.log('[DB] 🚨 SUPABASE CLIENT UNAVAILABLE - NO SYNC POSSIBLE');
+      return;
+    }
+    if (this.isSyncing) {
+      console.log('[DB] Sync already running, skipping...');
+      return;
+    }
+    
     this.isSyncing = true;
+    console.log('[DB] 🔄 Starting Supabase sync...');
 
     try {
       await this._ensureReady();
@@ -1167,11 +1194,14 @@ class DatabaseService {
       }
 
       if (unsyncedEvents.length === 0) {
+        console.log('[DB] No unsynced events found');
         this.isSyncing = false;
         return;
       }
+      
+      console.log(`[DB] Found ${unsyncedEvents.length} unsynced events to upload`);
 
-      const { error } = await supabase
+      const { error } = await client
         .from('noise_events')
         .insert(unsyncedEvents.map(event => ({
           timestamp: event.timestamp,
@@ -1203,7 +1233,10 @@ class DatabaseService {
           scoring_factors: event.scoring_factors || null,
         })));
 
-      if (error) throw error;
+      if (error) {
+        console.error('[DB] 🚨 SUPABASE INSERT FAILED:', error);
+        throw error;
+      }
 
       // Mark as synced
       if (this.useLocalDB) {
@@ -1212,9 +1245,10 @@ class DatabaseService {
         this.memoryCache.forEach(e => e.synced = 1);
       }
 
-      console.log(`[DB] Synced ${unsyncedEvents.length} events to Supabase`);
+      console.log(`[DB] ✅ Successfully synced ${unsyncedEvents.length} events to Supabase`);
     } catch (error) {
-      console.error('[DB] Sync error:', error);
+      console.error('[DB] 💥 SYNC ERROR:', error.message);
+      console.error('[DB] Full error:', error);
     } finally {
       this.isSyncing = false;
     }
@@ -1224,6 +1258,12 @@ class DatabaseService {
     // Debounced sync - wait 10 seconds after last event
     if (this._syncTimeout) clearTimeout(this._syncTimeout);
     this._syncTimeout = setTimeout(() => this.syncToSupabase(), 10000);
+  }
+
+  // Manual force sync (for debugging)
+  async forceSyncNow() {
+    console.log('[DB] 🔄 MANUAL FORCE SYNC TRIGGERED');
+    await this.syncToSupabase();
   }
 
   // ============================================================
@@ -1382,14 +1422,14 @@ class DatabaseService {
    * Get Supabase client for direct access
    */
   getSupabaseClient() {
-    return supabase;
+    return getSupabaseClient();
   }
 
   /**
    * Check if Supabase is connected
    */
   isSupabaseConnected() {
-    return supabase !== null;
+    return getSupabaseClient() !== null;
   }
 }
 
