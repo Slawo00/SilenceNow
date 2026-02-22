@@ -113,6 +113,11 @@ export default function SettingsScreen({ navigation }) {
         <SettingRow label="Terms of Service" value="" onPress={() => Alert.alert('Coming Soon')} />
         <SettingRow label="Contact Support" value="support@silencenow.app" />
         <SettingRow 
+          label="🌙 Nachtmodus (24/7)" 
+          value="›" 
+          onPress={() => navigation.navigate('NightMode')} 
+        />
+        <SettingRow 
           label="🔧 Debug Panel" 
           value="›" 
           onPress={() => navigation.navigate('Debug')} 

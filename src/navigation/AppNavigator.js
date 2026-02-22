@@ -8,6 +8,7 @@ import EventDetailScreen from '../screens/EventDetailScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import DebugScreen from '../screens/DebugScreen';
+import NightModeScreen from '../screens/NightModeScreen';
 
 const Stack = createStackNavigator();
 
@@ -27,6 +28,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Reports" component={ReportsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Debug" component={DebugScreen} />
+        <Stack.Screen name="NightMode" component={NightModeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

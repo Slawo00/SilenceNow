@@ -39,6 +39,9 @@ class AudioMonitor {
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
+        // 🔥 NIGHT MODE: Optimiert für 24/7 Background
+        interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
+        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
       });
 
       await this._startSilentAudio();
