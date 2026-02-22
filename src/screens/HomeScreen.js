@@ -99,6 +99,9 @@ export default function HomeScreen({ navigation }) {
 
   const startMonitoring = async () => {
     try {
+      // 🔥 INFO: Ab jetzt läuft 24/7 Background-Modus automatisch
+      console.log('[HomeScreen] 🔥 Starting 24/7 monitoring mode');
+      
       // Use AudioMonitorV2 directly with EventDetector v1 (has NeighborScoring)
       const success = await AudioMonitor.startMonitoring(
         (measurement) => {

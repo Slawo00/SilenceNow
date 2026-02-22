@@ -76,8 +76,8 @@ const NightModeScreen = ({ navigation }) => {
           </Text>
           <Text style={styles.statusSubtitle}>
             {isNightModeActive 
-              ? 'App überwacht 24/7 im Hintergrund'
-              : 'Für Nacht-Überwachung aktivieren'
+              ? '✅ App überwacht 24/7 im Hintergrund automatisch'
+              : 'ℹ️ Startet automatisch mit Audio-Monitoring'
             }
           </Text>
           
@@ -97,14 +97,15 @@ const NightModeScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>🔋 Nachtmodus Features:</Text>
+          <Text style={styles.infoTitle}>🔋 24/7 Background Features:</Text>
           <Text style={styles.infoText}>
+            ✅ Aktiviert sich AUTOMATISCH beim Start{'\n'}
             • Persistent Background Monitoring{'\n'}
             • Silent Audio Keep-Alive{'\n'}
             • Background Task Ping (alle 30s){'\n'}
             • Wake Timer (alle 20min){'\n'}
             • Persistent Notification{'\n'}
-            • Optimiert für 8+ Stunden Laufzeit
+            • Optimiert für Ganznacht-Betrieb
           </Text>
         </View>
 

@@ -33,6 +33,11 @@ class AudioMonitor {
       const hasPermission = await this.requestPermission();
       if (!hasPermission) return;
 
+      // 🔥 AUTO-ACTIVATE 24/7 MODE
+      const BackgroundKeepAlive = require('./BackgroundKeepAlive').default;
+      await BackgroundKeepAlive.enableNightMode();
+      console.log('[AudioMonitor] 🌙 Auto-activated 24/7 background mode');
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -130,6 +135,16 @@ class AudioMonitor {
     await this._cleanupRecording();
     await this._stopSilentAudio();
     this.currentDecibel = 0;
+
+    // 🔥 AUTO-DISABLE 24/7 MODE WHEN STOPPING
+    try {
+      const BackgroundKeepAlive = require('./BackgroundKeepAlive').default;
+      await BackgroundKeepAlive.disableNightMode();
+      console.log('[AudioMonitor] ☀️ Disabled 24/7 background mode');
+    } catch (error) {
+      console.warn('[AudioMonitor] Failed to disable background mode:', error);
+    }
+
     console.log('Monitoring stopped');
   }
 
